@@ -17,6 +17,7 @@
 package ch.systemsx.cisd.hdf5;
 
 import hdf.hdf5lib.structs.H5O_info_t;
+import hdf.hdf5lib.structs.H5O_token_t;
 
 /**
  * Information about an object in an HDF5 file.
@@ -28,7 +29,7 @@ public final class HDF5ObjectInformation extends HDF5CommonInformation
 
     private final long fileNumber;
 
-    private final long address;
+    private final H5O_token_t token;
 
     private final int referenceCount;
 
@@ -40,7 +41,7 @@ public final class HDF5ObjectInformation extends HDF5CommonInformation
     {
         super(path, objectType);
         this.fileNumber = info.fileno;
-        this.address = info.addr;
+        this.token = info.token;
         this.referenceCount = info.rc;
         this.creationTime = info.ctime;
         this.numberOfAttributes = info.num_attrs;
@@ -56,12 +57,12 @@ public final class HDF5ObjectInformation extends HDF5CommonInformation
     }
 
     /**
-     * Returns the address of the object in the file. If the address of two links is the same, then
+     * Returns the token of the object in the file. If the token of two links is the same, then
      * they point to the same object. Can be used to spot hard or soft links.
      */
-    public long getAddress()
+    public H5O_token_t getToken()
     {
-        return address;
+        return token;
     }
 
     /**
@@ -93,11 +94,7 @@ public final class HDF5ObjectInformation extends HDF5CommonInformation
     @Override
     public int hashCode()
     {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((path == null) ? 0 : path.hashCode());
-        result = prime * result + ((int) address);
-        return result;
+        return token.data.hashCode();
     }
 
     @Override
@@ -126,7 +123,7 @@ public final class HDF5ObjectInformation extends HDF5CommonInformation
         {
             return false;
         } 
-        if (other.address != address)
+        if (!other.token.equals(this.token))
         {
             return false;
         }

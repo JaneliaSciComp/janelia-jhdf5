@@ -101,7 +101,7 @@ public class HDFHelper
             }
         }
 
-        return new H5O_info_t(-1, -1, -1, -1, -1, -1, -1, -1, -1, null, null, null);
+        return new H5O_info_t(-1, HDF5Constants.H5O_TOKEN_UNDEF, -1, -1, -1, -1, -1, -1, -1);
     }
 
     /**

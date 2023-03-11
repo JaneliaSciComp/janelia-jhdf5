@@ -20,6 +20,7 @@ import java.io.File;
 
 import ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper;
 import hdf.hdf5lib.H5;
+import hdf.hdf5lib.HDF5Constants;
 
 /**
  * Provides access to a factory for HDF5 readers and writers.
@@ -58,7 +59,7 @@ public final class HDF5FactoryProvider
         @Override
         public boolean isHDF5File(File file)
         {
-            return H5.H5Fis_hdf5(file.getPath());
+            return H5.H5Fis_accessible(file.getPath(), HDF5Constants.H5P_DEFAULT);
         }
 
         @Override

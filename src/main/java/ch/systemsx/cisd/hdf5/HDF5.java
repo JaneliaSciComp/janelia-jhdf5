@@ -58,10 +58,15 @@ import static hdf.hdf5lib.HDF5Constants.H5T_VARIABLE;
 import static hdf.hdf5lib.HDF5Constants.H5Z_SO_FLOAT_DSCALE;
 import static hdf.hdf5lib.HDF5Constants.H5Z_SO_INT;
 
+import static org.bytedeco.hdf5.global.hdf5.H5Otoken_from_str;
+import static org.bytedeco.hdf5.global.hdf5.H5Oopen_by_token;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.bytedeco.hdf5.H5O_token_t;
 
 import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;
@@ -279,8 +284,10 @@ class HDF5
     public long openObject(long fileId, String path, ICleanUpRegistry registry)
     {
         checkMaxLength(path);
+        H5O_token_t token = new H5O_token_t();
+        H5Otoken_from_str(fileId, path.substring(1), token);
         final long objectId =
-                isReference(path) ? H5Oopen_by_addr(fileId, Long.parseLong(path.substring(1)))
+                isReference(path) ? H5Oopen_by_token(fileId, token)
                         : H5Oopen(fileId, path, H5P_DEFAULT);
         registry.registerCleanUp(new Runnable()
             {
@@ -372,7 +379,9 @@ class HDF5
     public long openGroup(long fileId, String path, ICleanUpRegistry registry)
     {
         checkMaxLength(path);
-        final long groupId = isReference(path) ? H5Oopen_by_addr(fileId, Long.parseLong(path.substring(1)))
+        H5O_token_t token = new H5O_token_t();
+        H5Otoken_from_str(fileId, path.substring(1), token);
+        final long groupId = isReference(path) ? H5Oopen_by_token(fileId, token)
                 : H5Gopen(fileId, path, H5P_DEFAULT);
         registry.registerCleanUp(new Runnable()
             {
@@ -932,7 +941,9 @@ class HDF5
     public long openDataSet(long fileId, String path, ICleanUpRegistry registry)
     {
         checkMaxLength(path);
-        final long dataSetId = isReference(path) ? H5Oopen_by_addr(fileId, Long.parseLong(path.substring(1)))
+        H5O_token_t token = new H5O_token_t();
+        H5Otoken_from_str(fileId, path.substring(1), token);
+        final long dataSetId = isReference(path) ? H5Oopen_by_token(fileId, token)
                 : H5Dopen(fileId, path, H5P_DEFAULT);
         if (registry != null)
         {
@@ -1778,7 +1789,9 @@ class HDF5
     public long openDataType(long fileId, String name, ICleanUpRegistry registry)
     {
         checkMaxLength(name);
-        final long dataTypeId = isReference(name) ? H5Oopen_by_addr(fileId, Long.parseLong(name.substring(1)))
+        H5O_token_t token = new H5O_token_t();
+        H5Otoken_from_str(fileId, name.substring(1), token);
+        final long dataTypeId = isReference(name) ? H5Oopen_by_token(fileId, token)
                 : H5Topen(fileId, name, H5P_DEFAULT);
         registry.registerCleanUp(new Runnable()
             {

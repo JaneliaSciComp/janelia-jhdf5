@@ -131,11 +131,13 @@ public final class HDF5Factory
     }
 
     /**
-     * Returns the number of open HDF5 files in the library.
+     * Returns the number of open HDF5 files in the library
      */
+    @Deprecated
     public static int getOpenHDF5FileCount()
     {
-        return H5.getOpenFileCount();
+        // TODO: FIXME, derive from open object IDs?
+        return 0;
     }
 
     /**
@@ -151,7 +153,7 @@ public final class HDF5Factory
     {
         synchronized (H5.class)
         {
-            if (H5.getOpenFileCount() == 0)
+            if (getOpenHDF5FileCount() == 0)
             {
                 HDF5.resetLibrary();
                 return true;
