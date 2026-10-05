@@ -28,9 +28,14 @@ import static hdf.hdf5lib.HDF5Constants.H5L_TYPE_EXTERNAL;
 import static hdf.hdf5lib.HDF5Constants.H5L_TYPE_HARD;
 import static hdf.hdf5lib.HDF5Constants.H5L_TYPE_SOFT;
 import static hdf.hdf5lib.HDF5Constants.H5O_TYPE_NTYPES;
+import static hdf.hdf5lib.HDF5Constants.H5P_DATASET_XFER;
 import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static hdf.hdf5lib.HDF5Constants.H5_INDEX_NAME;
 import static hdf.hdf5lib.HDF5Constants.H5_ITER_INC;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;
@@ -40,17 +45,49 @@ import hdf.hdf5lib.exceptions.HDF5LibraryException;
 import hdf.hdf5lib.structs.H5L_info_t;
 import hdf.hdf5lib.structs.H5O_info_t;
 
+import org.bytedeco.javacpp.Loader;
+import org.bytedeco.javacpp.Pointer;
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.hdf5.H5T_conv_except_func_t;
+import org.bytedeco.hdf5.H5AC_cache_image_config_t;
+import org.bytedeco.hdf5.global.hdf5;
+
+/**
+ * Helper methods that used to be implemented by a bespoke native library ("jhdf5"/"libjhdf5")
+ * built from this project's own JNI C sources. That native library was never actually part of
+ * this repository (no C sources, no build scripts, no bundled binaries for any platform), so
+ * every one of these methods was broken out of the box here regardless of platform.
+ * <p>
+ * All of them turn out to be thin wrappers around plain public HDF5 C API calls, which the
+ * {@code org.bytedeco:hdf5} JavaCPP preset (see bytedeco/javacpp-presets#1808) already binds.
+ * This class now implements them in pure Java on top of that preset instead of requiring its
+ * own native library, inheriting every platform the preset supports.
+ */
 public class HDFHelper
 {
 
-    static final boolean USE_NATIVE_METHODS = true;
-
-    static final int pointerSize;
-
     static
     {
-        pointerSize = getPointerSize();
+        // HDFHelper calls into org.bytedeco.hdf5.global.hdf5 below; make sure its native
+        // library is loaded regardless of what the caller has already triggered.
+        Loader.load(hdf5.class);
     }
+
+    // H5Pcreate_xfer_abort(_overflow) below use this statically-imported H5P_DATASET_XFER (the
+    // official hdf.hdf5lib API's own already-cached constant) rather than
+    // org.bytedeco.hdf5.global.hdf5.H5P_DATASET_XFER: that preset's own constant resolves to 11,
+    // an unrelated HDF5-internal array index (H5P_CLS_DXFR's position in H5Pint.c's static
+    // init_class[] table), not the real property-list-class hid_t.
+
+    /**
+     * compoundCpyVLStr/createVLStrFromCompound/freeCompoundVLStr below read and write a raw C
+     * pointer's worth of bytes using this value, so it has to match the actual native ABI
+     * JavaCPP loaded -- not just assume 64-bit -- since getting it wrong would silently corrupt
+     * memory (a 4-byte native char* read or written as 8 bytes) rather than fail loudly.
+     * Loader.sizeof(Pointer.class) is JavaCPP's own authoritative answer for sizeof(void*) on
+     * whatever platform it just loaded, the same way javacpp-generated code itself would ask.
+     */
+    static final int pointerSize = Loader.sizeof(Pointer.class);
 
     // ////////////////////////////////////////////////////////////
     // //
@@ -58,21 +95,26 @@ public class HDFHelper
     // //
     // ////////////////////////////////////////////////////////////
 
-    private static native boolean _H5Lexists(long loc_id, String name, long lapl_id)
-            throws HDF5LibraryException, NullPointerException;
-
     /**
-     * Version of {@link H5#H5Lexists(long, String, long)} that never throws an exception when {@link Name} does not exist. 
+     * Version of {@link H5#H5Lexists(long, String, long)} that never throws an exception when
+     * {@code name} does not exist.
      */
     public static boolean H5Lexists(long loc_id, String name, long lapl_id)
             throws HDF5LibraryException, NullPointerException
     {
-        synchronized (H5.class)
+        try
         {
-            return _H5Lexists(loc_id, name, lapl_id);
+            return H5.H5Lexists(loc_id, name, lapl_id);
+        } catch (HDF5LibraryException e)
+        {
+            if (e.getMinorErrorNumber() == HDF5Constants.H5E_NOTFOUND)
+            {
+                return false;
+            }
+            throw e;
         }
     }
-    
+
     public static H5O_info_t H5Oget_info_by_name(
             long loc_id,
             String object_name,
@@ -107,9 +149,6 @@ public class HDFHelper
      * contain the target of the link. If <var>exception_when_non_existent</var> is <code>true</code>, the method will throw an exception when the
      * link does not exist, otherwise -1 will be returned.
      */
-    private static native int _H5Lget_link_info(long locId, String name, 
-                                    String[] lname) throws HDF5LibraryException, NullPointerException;
-
     public static int H5Lget_link_info(
             final long fileId,
             final String objectName,
@@ -119,14 +158,6 @@ public class HDFHelper
         int result = -1;
         try
         {
-            if (USE_NATIVE_METHODS)
-            {
-                synchronized (H5.class)
-                {
-                    return _H5Lget_link_info(fileId, objectName, linkTargetOrNull);
-                }
-            }
-
             final H5L_info_t info = H5Lget_info(fileId, objectName, H5P_DEFAULT);
             if (info.type == H5L_TYPE_HARD)
             {
@@ -175,7 +206,7 @@ public class HDFHelper
         }
     }
 
-    private static void getLinkTargetByIdx(final long locId, final String objectName, final int idx, final int type, 
+    private static void getLinkTargetByIdx(final long locId, final String objectName, final int idx, final int type,
             final String[] linkTarget)
     {
         H5Lget_value_by_idx(locId, objectName, H5_INDEX_NAME, H5_ITER_INC, idx, linkTarget, H5P_DEFAULT);
@@ -186,32 +217,17 @@ public class HDFHelper
         }
     }
 
-    private static native int _H5Lget_link_names_all(long loc_id, String name, String[] oname, int n)
-            throws HDF5LibraryException, NullPointerException;
-
     public static void H5Lget_link_names_all(
             final long locId,
             final String groupName,
             final String[] objectNames)
     {
-        if (USE_NATIVE_METHODS)
-        {
-            synchronized (H5.class)
-            {
-                _H5Lget_link_names_all(locId, groupName, objectNames, objectNames.length);
-            }
-            return;
-        }
-
         for (int i = 0; i < objectNames.length; ++i)
         {
             objectNames[i] = H5Lget_name_by_idx(locId, groupName, H5_INDEX_NAME, H5_ITER_INC, i, H5P_DEFAULT);
         }
         return;
     }
-
-    private static native int _H5Lget_link_info_all(long loc_id, String name, String[] oname,
-            int[] type, String[] lname, String[] lfname, int n) throws HDF5LibraryException, NullPointerException;
 
     public static void H5Lget_link_info_all(
             final long locId,
@@ -221,16 +237,6 @@ public class HDFHelper
             final String[] linkFilenamesOrNull,
             final String[] linkTargetsOrNull)
     {
-        if (USE_NATIVE_METHODS)
-        {
-            synchronized (H5.class)
-            {
-                _H5Lget_link_info_all(locId, groupName, objectNames, objectTypes, linkTargetsOrNull, linkFilenamesOrNull, 
-                        objectNames.length);
-            }
-            return;
-        }
-
         long groupId = -1;
         try
         {
@@ -275,9 +281,26 @@ public class HDFHelper
     // ////////////////////////////////////////////////////////////
 
     /**
+     * A {@link BytePointer} wrapping an address that was not allocated by this process (e.g. one
+     * read back out of a compound buffer). It is never responsible for freeing that memory via a
+     * JavaCPP-attached deallocator -- callers free it explicitly via {@link Pointer#free} instead,
+     * matching the malloc/free pairing the original C implementation used.
+     */
+    private static final class ForeignBytePointer extends BytePointer
+    {
+        ForeignBytePointer(long rawAddress)
+        {
+            address = rawAddress;
+        }
+    }
+
+    /**
      * Returns the size of a pointer on this platform.
      */
-    public static native int getPointerSize();
+    public static int getPointerSize()
+    {
+        return pointerSize;
+    }
 
     /**
      * Returns the size of a machine word on this platform.
@@ -290,18 +313,66 @@ public class HDFHelper
     /**
      * Creates a C copy of str (using calloc) and put the reference of it into buf at bufOfs.
      */
-    public static native int compoundCpyVLStr(String str, byte[] buf, int bufOfs);
+    public static int compoundCpyVLStr(String str, byte[] buf, int bufOfs)
+    {
+        if (str == null)
+        {
+            throw new NullPointerException("compoundCpyVLStr: str is null");
+        }
+        if (buf == null)
+        {
+            throw new NullPointerException("compoundCpyVLStr: buf is null");
+        }
+        final byte[] utf8 = str.getBytes(StandardCharsets.UTF_8);
+        // calloc, not malloc: the trailing byte is left zeroed as the string's null terminator,
+        // exactly like the original C calloc(1, numberOfBytes + 1) did.
+        final Pointer raw = Pointer.calloc(1, utf8.length + 1);
+        new BytePointer(raw).capacity(utf8.length + 1).put(utf8);
+        ByteBuffer.wrap(buf).order(ByteOrder.nativeOrder()).putLong(bufOfs, raw.address());
+        return 0;
+    }
 
     /**
      * Creates a Java copy from a C char* pointer in the buf at bufOfs.
      */
-    public static native String createVLStrFromCompound(byte[] buf, int bufOfs);
+    public static String createVLStrFromCompound(byte[] buf, int offset)
+    {
+        if (buf == null)
+        {
+            throw new NullPointerException("createVLStrFromCompound: buf is null");
+        }
+        final long address = ByteBuffer.wrap(buf).order(ByteOrder.nativeOrder()).getLong(offset);
+        return new ForeignBytePointer(address).getString(StandardCharsets.UTF_8);
+    }
 
     /**
      * Frees the variable-length strings in compound buf, where one compound has size recordSize and the variable-length members can be found at
      * byte-offsets vlIndices.
      */
-    public static native int freeCompoundVLStr(byte[] buf, int recordSize, int[] vlIndices);
+    public static int freeCompoundVLStr(byte[] buf, int recordSize, int[] vlIndices)
+    {
+        if (buf == null)
+        {
+            throw new NullPointerException("freeCompoundVLStr: buf is null");
+        }
+        if (vlIndices == null)
+        {
+            throw new NullPointerException("freeCompoundVLStr: vlIndices is null");
+        }
+        final ByteBuffer bb = ByteBuffer.wrap(buf).order(ByteOrder.nativeOrder());
+        for (int recordOffset = 0; recordOffset < buf.length; recordOffset += recordSize)
+        {
+            for (int idx : vlIndices)
+            {
+                final long address = bb.getLong(recordOffset + idx);
+                if (address != 0)
+                {
+                    Pointer.free(new ForeignBytePointer(address));
+                }
+            }
+        }
+        return 0;
+    }
 
     // ////////////////////////////////////////////////////////////
     // //
@@ -309,7 +380,38 @@ public class HDFHelper
     // //
     // ////////////////////////////////////////////////////////////
 
-    private static native long _H5Pcreate_xfer_abort_overflow();
+    /**
+     * Aborts conversions that trigger overflows (range-hi/range-low exceptions); any other
+     * conversion exception is left unhandled (HDF5's default behavior applies). Allocated once:
+     * the JNI callback it wraps is only ever invoked by HDF5 on the (rare) exception path during
+     * a type conversion, never per element on the hot path, so a single shared instance is both
+     * correct and cheap to reuse across every property list that registers it.
+     */
+    private static final H5T_conv_except_func_t ABORT_ON_OVERFLOW_CALLBACK = new H5T_conv_except_func_t()
+    {
+        @Override
+        public int call(int exceptType, long srcId, long dstId, Pointer srcBuf, Pointer dstBuf, Pointer opData)
+        {
+            if (exceptType == hdf5.H5T_CONV_EXCEPT_RANGE_HI || exceptType == hdf5.H5T_CONV_EXCEPT_RANGE_LOW)
+            {
+                return hdf5.H5T_CONV_ABORT;
+            }
+            return hdf5.H5T_CONV_UNHANDLED;
+        }
+    };
+
+    /**
+     * Aborts every conversion exception unconditionally. See {@link #ABORT_ON_OVERFLOW_CALLBACK}
+     * for why a single shared instance is appropriate here too.
+     */
+    private static final H5T_conv_except_func_t ABORT_ALWAYS_CALLBACK = new H5T_conv_except_func_t()
+    {
+        @Override
+        public int call(int exceptType, long srcId, long dstId, Pointer srcBuf, Pointer dstBuf, Pointer opData)
+        {
+            return hdf5.H5T_CONV_ABORT;
+        }
+    };
 
     /**
      * Returns a dataset transfer property list (<code>H5P_DATASET_XFER</code>) that has a conversion exception handler set which abort conversions
@@ -317,13 +419,17 @@ public class HDFHelper
      */
     public static long H5Pcreate_xfer_abort_overflow()
     {
-        synchronized (H5.class)
+        final long plist = H5.H5Pcreate(H5P_DATASET_XFER);
+        if (plist < 0)
         {
-            return _H5Pcreate_xfer_abort_overflow();
+            throw new HDF5LibraryException("H5Pcreate(H5P_DATASET_XFER) failed");
         }
+        if (hdf5.H5Pset_type_conv_cb(plist, ABORT_ON_OVERFLOW_CALLBACK, null) < 0)
+        {
+            throw new HDF5LibraryException("H5Pset_type_conv_cb failed");
+        }
+        return plist;
     }
-
-    private static native long _H5Pcreate_xfer_abort();
 
     /**
      * Returns a dataset transfer property list (<code>H5P_DATASET_XFER</code>) that has a conversion exception handler set which aborts all
@@ -331,10 +437,16 @@ public class HDFHelper
      */
     public static long H5Pcreate_xfer_abort()
     {
-        synchronized (H5.class)
+        final long plist = H5.H5Pcreate(H5P_DATASET_XFER);
+        if (plist < 0)
         {
-            return _H5Pcreate_xfer_abort();
+            throw new HDF5LibraryException("H5Pcreate(H5P_DATASET_XFER) failed");
         }
+        if (hdf5.H5Pset_type_conv_cb(plist, ABORT_ALWAYS_CALLBACK, null) < 0)
+        {
+            throw new HDF5LibraryException("H5Pset_type_conv_cb failed");
+        }
+        return plist;
     }
 
     // ////////////////////////////////////////////////////////////
@@ -343,62 +455,77 @@ public class HDFHelper
     // //
     // ////////////////////////////////////////////////////////////
 
-    private static native long _H5Pset_mdc_image_config(long fapl, boolean generate_image) throws HDF5LibraryException;
-    
     /**
      * Sets whether a metadata cache image should be generated for an HDF5 file.
-     * 
+     *
      * @param fapl The file access property list of the file.
-     * @param generate_image If a metadata cache image should be generated for the file. 
+     * @param generate_image If a metadata cache image should be generated for the file.
      * @return 0 for successfull completion.
      */
     public static long H5Pset_mdc_image_config(long fapl, boolean generate_image) throws HDF5LibraryException
     {
-        synchronized (H5.class)
+        try (H5AC_cache_image_config_t config = new H5AC_cache_image_config_t())
         {
-            return _H5Pset_mdc_image_config(fapl, generate_image);
-        }        
+            config.version(hdf5.H5AC__CURR_CACHE_IMAGE_CONFIG_VERSION);
+            config.generate_image(generate_image);
+            config.save_resize_status(false);
+            config.entry_ageout(hdf5.H5AC__CACHE_IMAGE__ENTRY_AGEOUT__NONE);
+
+            final int status = hdf5.H5Pset_mdc_image_config(fapl, config);
+            if (status < 0)
+            {
+                throw new HDF5LibraryException("H5Pset_mdc_image_config failed");
+            }
+            return status;
+        }
     }
-    
-    private static native boolean _H5Pget_mdc_image_enabled(long fapl);
-    
+
     /**
      * Determines whether the metadata cache image generation is enabled for an HDF5 file.
-     * 
+     *
      * @param fapl The file access property list of the file.
      * @return <code>true</code> if a metadata cache image will ge generated on file close for this file.
      */
     public static boolean H5Pget_mdc_image_enabled(long fapl)
     {
-        synchronized (H5.class)
+        try (H5AC_cache_image_config_t config = new H5AC_cache_image_config_t())
         {
-            return _H5Pget_mdc_image_enabled(fapl);
-        }        
+            config.version(hdf5.H5AC__CURR_CACHE_IMAGE_CONFIG_VERSION);
+            final int status = hdf5.H5Pget_mdc_image_config(fapl, config);
+            if (status < 0)
+            {
+                throw new HDF5LibraryException("H5Pget_mdc_image_config failed");
+            }
+            return config.generate_image();
+        }
     }
-    
-    private static native boolean _H5Fhas_mdc_image(long file_id);
-    
+
     /**
-     * Checks whether the file has an metadata cache image. 
+     * Checks whether the file has an metadata cache image.
      * <p>
-     * On files open for read/write access this function needs to be called 
+     * On files open for read/write access this function needs to be called
      * immediately after opening the file and before the first access to any metadata.
-     * 
+     *
      * @param file_id The id of the file
      * @return <code>true</code> if the file has a metadata cache image.
      */
     public static boolean H5Fhas_mdc_image(long file_id)
     {
-        synchronized (H5.class)
+        final long[] imageAddr = new long[1];
+        final long[] imageLen = new long[1];
+        final int status = hdf5.H5Fget_mdc_image_info(file_id, imageAddr, imageLen);
+        if (status < 0)
         {
-            return _H5Fhas_mdc_image(file_id);
+            throw new HDF5LibraryException("H5Fget_mdc_image_info failed");
         }
+        // HADDR_UNDEF is all-ones (UINT64_MAX), i.e. -1 as a signed 64-bit value.
+        return imageAddr[0] != -1L && imageLen[0] > 0;
     }
-    
+
     /**
-     * Checks whether the file has an metadata cache image. 
+     * Checks whether the file has an metadata cache image.
      * <p>
-     * 
+     *
      * @param file_path The path of the file
      * @return <code>true</code> if the file has a metadata cache image.
      */
@@ -411,7 +538,7 @@ public class HDFHelper
                         hdf.hdf5lib.HDF5Constants.H5F_ACC_RDONLY,
                         hdf.hdf5lib.HDF5Constants.H5P_DEFAULT);
             return H5Fhas_mdc_image(fileId);
-        } finally 
+        } finally
         {
             if (fileId != -1)
             {
@@ -419,7 +546,7 @@ public class HDFHelper
             }
         }
     }
-    
+
     // ////////////////////////////////////////////////////////////
     // //
     // Convenience functions for converting native data types. //
