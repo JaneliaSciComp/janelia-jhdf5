@@ -67,7 +67,8 @@
 		<url>https://github.com/JaneliaSciComp/janelia-jhdf5</url>
 	</issueManagement>
 	<ciManagement>
-		<system>None</system>
+		<system>GitHub Actions</system>
+		<url>https://github.com/JaneliaSciComp/janelia-jhdf5/actions</url>
 	</ciManagement>
 	<dependencies>
 		<dependency>
@@ -166,12 +167,71 @@
 		</plugins>
 	</build>
 
-	<pluginRepositories>
-		<pluginRepository>
-			<id>sonatype-nexus-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</pluginRepository>
-	</pluginRepositories>
+	<profiles>
+		<!-- The natives dependency above is fixed to macosx-arm64. These put the natives for the
+		     platform the build runs on onto the test classpath, so that the tests also run on
+		     the other platforms (e.g. in CI). -->
+		<profile>
+			<id>natives-linux-x86_64</id>
+			<activation>
+				<os><family>unix</family><name>Linux</name><arch>amd64</arch></os>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>hdf5</artifactId>
+					<version>${hdf5.version}</version>
+					<classifier>linux-x86_64</classifier>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>natives-linux-arm64</id>
+			<activation>
+				<os><family>unix</family><name>Linux</name><arch>aarch64</arch></os>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>hdf5</artifactId>
+					<version>${hdf5.version}</version>
+					<classifier>linux-arm64</classifier>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>natives-macosx-x86_64</id>
+			<activation>
+				<os><family>mac</family><arch>x86_64</arch></os>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>hdf5</artifactId>
+					<version>${hdf5.version}</version>
+					<classifier>macosx-x86_64</classifier>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>natives-windows-x86_64</id>
+			<activation>
+				<os><family>windows</family><arch>amd64</arch></os>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>hdf5</artifactId>
+					<version>${hdf5.version}</version>
+					<classifier>windows-x86_64</classifier>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
 
 
 	<properties>
@@ -188,9 +248,12 @@
 			<id>scijava.public</id>
 			<url>https://maven.scijava.org/content/groups/public</url>
 		</repository>
+		<!-- org.bytedeco snapshots (the oss.sonatype.org snapshot repository is shut down). -->
 		<repository>
-			<id>sonatype-nexus-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<id>central-portal-snapshots</id>
+			<url>https://central.sonatype.com/repository/maven-snapshots/</url>
+			<releases><enabled>false</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
 	</repositories>
 
