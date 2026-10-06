@@ -97,7 +97,63 @@
 			<groupId>args4j</groupId>
 			<artifactId>args4j</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>7.5.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jmock</groupId>
+			<artifactId>jmock</artifactId>
+			<version>2.12.0</version>
+			<scope>test</scope>
+			<exclusions>
+				<!-- Annotation-only jars, not referenced by our test code; they duplicate
+				     classes with transitive dependencies already pulled in elsewhere. -->
+				<exclusion>
+					<groupId>com.google.code.findbugs</groupId>
+					<artifactId>annotations</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>net.jcip</groupId>
+					<artifactId>jcip-annotations</artifactId>
+				</exclusion>
+				<!-- TestNG already brings in the modern, unified org.hamcrest:hamcrest,
+				     which already provides everything jmock's own hamcrest-core needs. -->
+				<exclusion>
+					<groupId>org.hamcrest</groupId>
+					<artifactId>hamcrest-core</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- org.bytedeco:hdf5 leaves slf4j <optional>, so consumers (here, our own
+		     tests) must supply a binding themselves; hdf.hdf5lib.H5's static
+		     initializer references it unconditionally. -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-nop</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<suiteXmlFiles>
+						<suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+					</suiteXmlFiles>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 	<pluginRepositories>
 		<pluginRepository>
