@@ -190,28 +190,20 @@ class HDF5FloatReader implements IHDF5FloatReader
 
     private float[] readFloatArray(long dataSetId, ICleanUpRegistry registry)
     {
-        try
+        // Array data types need their own memory type. Check for them up front: the JNI
+        // layer rejects the (too small) buffer of a plain read before HDF5 itself would
+        // fail with H5E_CANTINIT.
+        final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
+        if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
         {
-            final DataSpaceParameters spaceParams =
-                    baseReader.getSpaceParameters(dataSetId, registry);
-            final float[] data = new float[spaceParams.blockSize];
-            baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_FLOAT, spaceParams.memorySpaceId,
-                    spaceParams.dataSpaceId, data);
-            return data;
-        } catch (HDF5LibraryException ex)
-        {
-            if (ex.getMajorErrorNumber() == HDF5Constants.H5E_DATATYPE
-                    && ex.getMinorErrorNumber() == HDF5Constants.H5E_CANTINIT)
-            {
-                // Check whether it is an array data type.
-                final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
-                if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
-                {
-                    return readFloatArrayFromArrayType(dataSetId, dataTypeId, registry);
-                }
-            }
-            throw ex;
+            return readFloatArrayFromArrayType(dataSetId, dataTypeId, registry);
         }
+        final DataSpaceParameters spaceParams =
+                baseReader.getSpaceParameters(dataSetId, registry);
+        final float[] data = new float[spaceParams.blockSize];
+        baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_FLOAT, spaceParams.memorySpaceId,
+                spaceParams.dataSpaceId, data);
+        return data;
     }
 
     private float[] readFloatArrayFromArrayType(long dataSetId, final long dataTypeId,
@@ -571,28 +563,20 @@ class HDF5FloatReader implements IHDF5FloatReader
 
     MDFloatArray readFloatMDArray(long dataSetId, ICleanUpRegistry registry)
     {
-        try
+        // Array data types need their own memory type. Check for them up front: the JNI
+        // layer rejects the (too small) buffer of a plain read before HDF5 itself would
+        // fail with H5E_CANTINIT.
+        final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
+        if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
         {
-            final DataSpaceParameters spaceParams =
-                    baseReader.getSpaceParameters(dataSetId, registry);
-            final float[] data = new float[spaceParams.blockSize];
-            baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_FLOAT, spaceParams.memorySpaceId,
-                    spaceParams.dataSpaceId, data);
-            return new MDFloatArray(data, spaceParams.dimensions);
-        } catch (HDF5LibraryException ex)
-        {
-            if (ex.getMajorErrorNumber() == HDF5Constants.H5E_DATATYPE
-                    && ex.getMinorErrorNumber() == HDF5Constants.H5E_CANTINIT)
-            {
-                // Check whether it is an array data type.
-                final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
-                if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
-                {
-                    return readFloatMDArrayFromArrayType(dataSetId, dataTypeId, registry);
-                }
-            }
-            throw ex;
+            return readFloatMDArrayFromArrayType(dataSetId, dataTypeId, registry);
         }
+        final DataSpaceParameters spaceParams =
+                baseReader.getSpaceParameters(dataSetId, registry);
+        final float[] data = new float[spaceParams.blockSize];
+        baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_FLOAT, spaceParams.memorySpaceId,
+                spaceParams.dataSpaceId, data);
+        return new MDFloatArray(data, spaceParams.dimensions);
     }
 
     private MDFloatArray readFloatMDArrayFromArrayType(long dataSetId, final long dataTypeId,

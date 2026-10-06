@@ -150,6 +150,17 @@
 					<suiteXmlFiles>
 						<suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
 					</suiteXmlFiles>
+					<environmentVariables>
+						<!-- HDF5ArchiverTest's expected listings (and its .h5ar fixtures) were
+						     written in this time zone. -->
+						<TZ>Europe/Zurich</TZ>
+						<!-- The tests close an HDF5 file and immediately reopen it. On machines
+						     where another process (endpoint security scanners, cloud sync) briefly
+						     opens freshly written files, HDF5's own file locking then fails
+						     intermittently with "Unable to lock file". The tests run in a single
+						     process and do not rely on that locking. -->
+						<HDF5_USE_FILE_LOCKING>FALSE</HDF5_USE_FILE_LOCKING>
+					</environmentVariables>
 				</configuration>
 			</plugin>
 		</plugins>

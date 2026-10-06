@@ -48,16 +48,9 @@ import ch.systemsx.cisd.hdf5.IHDF5WriterConfigurator.FileFormatVersionBounds;
 
 /**
  * Tests for {@link HDF5Archiver}.
- * <p>
- * Marked {@code groups = "broken"} (excluded by testng.xml's suite-level exclude) pending
- * investigation of a reproducible native crash (SIGSEGV inside libhdf5's H5CX_pop, called from
- * HDFHelper.H5Fhas_mdc_image -> org.bytedeco.hdf5.global.hdf5.H5Fget_mdc_image_info, during the
- * very first test's HDF5Archiver construction) -- part of the same class of native-boundary
- * memory corruption also seen in HDF5RoundtripTest; see that class's Javadoc.
  *
  * @author Bernd Rinn
  */
-@Test(groups = "broken")
 public class HDF5ArchiverTest
 {
     private static final File rootDirectory = new File("target", "unit-test-wd");
@@ -148,11 +141,13 @@ public class HDF5ArchiverTest
                 "dir", "dir/link_name", new LinkRecord(null, null, FileLinkType.DIRECTORY, 111L,
                         946681200491L / 1000L, 0, 0, (short) 0, 0), idCache).describeLink(true,
                 false));
-        assertEquals("755\troot\troot\t       111\t2000-01-01 00:00:00\t" + Utils.crc32ToString(200)
+        assertEquals("755\troot\t" + rootGroupName + "\t       111\t2000-01-01 00:00:00\t"
+                + Utils.crc32ToString(200)
                 + "\tdir/link_name", new ArchiveEntry("dir", "dir/link_name", new LinkRecord(null,
                 null, FileLinkType.REGULAR_FILE, 111L, 946681200491L / 1000L, 0, 0, (short) 0755,
                 200), idCache).describeLink(true, true));
-        assertEquals("0\troot\troot\t       DIR\t2000-01-01 00:00:00\t        \tdir/link_name",
+        assertEquals("0\troot\t" + rootGroupName
+                + "\t       DIR\t2000-01-01 00:00:00\t        \tdir/link_name",
                 new ArchiveEntry("dir", "dir/link_name", new LinkRecord("link_name2", null,
                         FileLinkType.DIRECTORY, 111L, 946681200491L / 1000L, 0, 0, (short) 0, 0),
                         idCache).describeLink(true, true));

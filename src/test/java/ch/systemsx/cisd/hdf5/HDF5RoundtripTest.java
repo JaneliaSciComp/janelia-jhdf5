@@ -98,19 +98,9 @@ import hdf.hdf5lib.exceptions.HDF5SymbolTableException;
 /**
  * Test cases for {@link IHDF5Writer} and {@link IHDF5Reader}, doing "round-trips" to the HDF5 disk
  * format and back.
- * <p>
- * Marked {@code groups = "broken"} (excluded by testng.xml's suite-level exclude) pending
- * investigation of a reproducible native crash (SIGSEGV/SIGBUS inside libhdf5, at varying call
- * sites across runs -- e.g. H5CX_pop, H5Dwrite -- consistent with memory corruption) that this
- * class triggers somewhere in its several hundred test methods when run as part of the full
- * suite. The smaller test classes (BitSetConversionTest, HDF5UtilsTest, MatrixUtilsTest,
- * UnsignedIntUtilsTest, HDF5TimeUnitTest, HDF5TimeDurationReaderTest, h5ar.ArchivingStrategyTest,
- * h5ar.UtilsTest) and HDF5DataSetRandomAccessFileTest (which does exercise real file I/O) all run
- * cleanly; the crash appears specific to something in this class's much larger surface area.
  *
  * @author Bernd Rinn
  */
-@Test(groups = "broken")
 public class HDF5RoundtripTest
 {
 
@@ -6714,8 +6704,8 @@ public class HDF5RoundtripTest
         final IHDF5Reader reader = HDF5FactoryProvider.get().openForReading(linkFile);
         assertEquals(HDF5ObjectType.EXTERNAL_LINK, reader.object().getObjectType(linkName, false));
         assertEquals(dataSetValue, reader.readString(linkName));
-        final String expectedExternalLinkFilename = OSUtilities.isWindows() ? "targets\\unit-test-wd\\hdf5-roundtrip-wd\\fileToLinkTo.h5"
-                : "targets/unit-test-wd/hdf5-roundtrip-wd/fileToLinkTo.h5";
+        final String expectedExternalLinkFilename = OSUtilities.isWindows() ? "target\\unit-test-wd\\hdf5-roundtrip-wd\\fileToLinkTo.h5"
+                : "target/unit-test-wd/hdf5-roundtrip-wd/fileToLinkTo.h5";
         final String expectedLink = "EXTERNAL::" + expectedExternalLinkFilename + "::" + dataSetName;
         final HDF5LinkInformation info = reader.object().getLinkInformation(linkName);
         assertEquals(expectedLink, info.tryGetSymbolicLinkTarget());
@@ -12132,11 +12122,8 @@ public class HDF5RoundtripTest
         assertTrue(writer.file().isMDCImageGenerationEnabled());
         writer.close();
         
-        // Note: this is not really expected but documents the behavior as of HDF5 1.10.3-pre1.
-        assertFalse(HDF5Factory.hasMDCImage(hdf5File));
-        
-        // This would be the expected behavior as the default library version boundaries are (EARLIEST, LATEST)
-        // and thus HDF5 should be able to generate an MDC image!
-        /* assertTrue(HDF5Factory.hasMDCImage(hdf5File)); */
+        // HDF5 1.10.3-pre1 did not generate an MDC image here, although it should, as the default
+        // library version boundaries are (EARLIEST, LATEST). HDF5 2.x does generate it.
+        assertTrue(HDF5Factory.hasMDCImage(hdf5File));
     }
 }
