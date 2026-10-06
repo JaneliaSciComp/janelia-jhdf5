@@ -18,6 +18,7 @@ package ch.systemsx.cisd.hdf5;
 
 import java.io.File;
 
+import ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary;
 import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;
 
@@ -30,6 +31,11 @@ import hdf.hdf5lib.HDF5Constants;
  */
 public final class HDF5Factory
 {
+
+    static
+    {
+        HDF5NativeLibrary.load();
+    }
 
     /**
      * Opens an HDF5 <var>file</var> for writing and reading. If the file does not yet exist, it will be created.

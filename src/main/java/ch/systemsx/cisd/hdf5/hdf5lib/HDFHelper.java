@@ -93,6 +93,8 @@ public class HDFHelper
         // HDFHelper calls into org.bytedeco.hdf5.global.hdf5 below; make sure its native
         // library is loaded regardless of what the caller has already triggered.
         Loader.load(hdf5.class);
+        // ... and that hdf.hdf5lib.H5, used throughout, can find its own.
+        HDF5NativeLibrary.load();
     }
 
     // H5Pcreate_xfer_abort(_overflow) below use this statically-imported H5P_DATASET_XFER (the

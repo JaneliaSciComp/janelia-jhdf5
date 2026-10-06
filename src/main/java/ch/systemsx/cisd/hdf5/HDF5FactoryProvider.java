@@ -18,6 +18,7 @@ package ch.systemsx.cisd.hdf5;
 
 import java.io.File;
 
+import ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary;
 import ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper;
 import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;
@@ -29,6 +30,12 @@ import hdf.hdf5lib.HDF5Constants;
  */
 public final class HDF5FactoryProvider
 {
+
+    static
+    {
+        HDF5NativeLibrary.load();
+    }
+
     private static class HDF5Factory implements IHDF5Factory
     {
 
