@@ -36,6 +36,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeSuite;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import ch.systemsx.cisd.base.unix.FileLinkType;
@@ -124,6 +125,7 @@ public class HDF5ArchiverTest
         { "requires_unix" })
     public void testDescribeLink()
     {
+        skipUnlessUnix("user and group names");
         final String rootGroupName = OSUtilities.isMacOS() ? "wheel" : "root";
         final IdCache idCache = new IdCache();
         assertEquals("dir/link_name", new ArchiveEntry("dir", "dir/link_name", new LinkRecord(null,
@@ -257,6 +259,18 @@ public class HDF5ArchiverTest
         ar.close();
     }
 
+    /**
+     * Skips the calling test where {@link Unix} isn't operational (Windows): the archiver then
+     * neither creates nor detects symbolic links, and has no user or group names.
+     */
+    private static void skipUnlessUnix(String needs)
+    {
+        if (Unix.isOperational() == false)
+        {
+            throw new SkipException("Needs " + needs + ", which require Unix");
+        }
+    }
+
     private File createTestDirectory() throws IOException
     {
         return createTestDirectory(null, System.currentTimeMillis());
@@ -276,7 +290,7 @@ public class HDF5ArchiverTest
         final File f1 = new File(dir, "file_test1.txt");
         f1.delete();
         f1.deleteOnExit();
-        FileUtils.writeLines(f1, Arrays.asList("Line 1", "Line 2", "Line 3"));
+        FileUtils.writeLines(f1, "UTF-8", Arrays.asList("Line 1", "Line 2", "Line 3"), "\n");
         f1.setLastModified(time);
         final File dir2 = new File(dir, "dir_somedir");
         dir2.delete();
@@ -285,7 +299,7 @@ public class HDF5ArchiverTest
         final File f2 = new File(dir2, "file_test2.txt");
         f2.delete();
         f2.deleteOnExit();
-        FileUtils.writeLines(f2, Arrays.asList("A", "B", "C"));
+        FileUtils.writeLines(f2, "UTF-8", Arrays.asList("A", "B", "C"), "\n");
         f2.setLastModified(time);
         final File dir3 = new File(dir, "dir_someotherdir");
         dir3.delete();
@@ -339,6 +353,7 @@ public class HDF5ArchiverTest
     @Test
     public void testRoundtrip() throws IOException
     {
+        skipUnlessUnix("symbolic links");
         final long now = System.currentTimeMillis();
         final long dirLastChanged = now - 1000L * 3600L * 24 * 5;
         final File dir = createTestDirectory("original", dirLastChanged);
@@ -478,6 +493,7 @@ public class HDF5ArchiverTest
     @Test
     public void testRoundtripArtificalRootOK() throws IOException
     {
+        skipUnlessUnix("symbolic links");
         final File dir = createTestDirectory();
         final File h5arfile = new File(workingDirectory, "testRoundtripArtificalRootOK.h5ar");
         h5arfile.delete();
@@ -521,6 +537,7 @@ public class HDF5ArchiverTest
     @Test
     public void testRoundtripArtificalRootWhichExistsOnFSOK() throws IOException
     {
+        skipUnlessUnix("symbolic links");
         final long now = System.currentTimeMillis();
         final long dirLastChanged = now - 1000L * 3600L * 24 * 3;
         final File dir = createTestDirectory("ttt", dirLastChanged);
@@ -560,6 +577,7 @@ public class HDF5ArchiverTest
     @Test
     public void testGetInfo() throws IOException
     {
+        skipUnlessUnix("symbolic links");
         final File dir = createTestDirectory();
         final File h5arfile = new File(workingDirectory, "testGetInfo.h5ar");
         h5arfile.delete();

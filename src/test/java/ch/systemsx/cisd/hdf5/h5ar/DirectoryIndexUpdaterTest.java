@@ -16,6 +16,7 @@
 
 package ch.systemsx.cisd.hdf5.h5ar;
 
+import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 
 import java.io.File;
@@ -205,9 +206,13 @@ public class DirectoryIndexUpdaterTest
         final File f = new File(new File(workingDirectory, "ttt"), name);
         f.getParentFile().mkdirs();
         FileUtils.touch(f);
-        f.setLastModified(lastModified * 1000L);
+        assertTrue("could not set the file's modification time",
+                f.setLastModified(lastModified * 1000L));
         final long lastModifiedDir = 2222L; 
-        f.getParentFile().setLastModified(lastModifiedDir * 1000L);
+        assertTrue("could not set the directory's modification time",
+                f.getParentFile().setLastModified(lastModifiedDir * 1000L));
+        assertEquals("directory modification time", lastModifiedDir * 1000L,
+                f.getParentFile().lastModified());
         context.checking(new Expectations()
             {
                 {

@@ -158,6 +158,10 @@
 						     process and do not rely on that locking. -->
 						<HDF5_USE_FILE_LOCKING>FALSE</HDF5_USE_FILE_LOCKING>
 					</environmentVariables>
+					<systemPropertyVariables>
+						<!-- Java ignores the TZ environment variable on Windows. -->
+						<user.timezone>Europe/Zurich</user.timezone>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 		</plugins>
