@@ -11,6 +11,11 @@ jobs:
   test:
     name: ${{ matrix.os }} / Java ${{ matrix.java }}
     runs-on: ${{ matrix.os }}
+    # Windows is known broken: the org.bytedeco:hdf5 preset links HDF5 statically into
+    # jnihdf5.dll there (link = "libhdf5", the static library), while hdf.hdf5lib's
+    # hdf5_java.dll uses hdf5.dll. The two HDF5 copies don't share IDs, so most tests fail.
+    # Keep the job running for visibility, but don't let it fail the workflow until that's fixed.
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:
