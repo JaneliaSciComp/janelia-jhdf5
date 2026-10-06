@@ -18,6 +18,8 @@ package ch.systemsx.cisd.hdf5.h5ar;
 
 import java.io.File;
 
+import org.apache.commons.io.FilenameUtils;
+
 import ch.systemsx.cisd.base.exceptions.IErrorStrategy;
 import ch.systemsx.cisd.base.exceptions.IOExceptionUnchecked;
 
@@ -54,7 +56,10 @@ final class DirectoryIndexUpdater
 
         if (immediateGroupOnly == false)
         {
-            final String pathPrefixOnFSOrNull = tryGetPathPrefix(groupPath, path.getAbsolutePath());
+            // groupPath uses '/', so compare it with the file system path in that form, too
+            // (on Windows, getAbsolutePath() uses '\\').
+            final String pathPrefixOnFSOrNull =
+                    tryGetPathPrefix(groupPath, FilenameUtils.separatorsToUnix(path.getAbsolutePath()));
             String groupName = Utils.getName(groupPath);
             groupPath = Utils.getParentPath(groupPath);
             while (groupName.length() > 0)

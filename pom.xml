@@ -148,9 +148,6 @@
 						<suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
 					</suiteXmlFiles>
 					<environmentVariables>
-						<!-- HDF5ArchiverTest's expected listings (and its .h5ar fixtures) were
-						     written in this time zone. -->
-						<TZ>Europe/Zurich</TZ>
 						<!-- The tests close an HDF5 file and immediately reopen it. On machines
 						     where another process (endpoint security scanners, cloud sync) briefly
 						     opens freshly written files, HDF5's own file locking then fails
@@ -170,6 +167,11 @@
 		<license.licenseName>BSD-3-Clause</license.licenseName>
 		<license.copyrightOwners>Howard Hughes Medical Institute</license.copyrightOwners>
 		<javacpp.version>1.5.15-SNAPSHOT</javacpp.version>
+		<!-- HDF5ArchiverTest's expected listings (and its .h5ar fixtures) were written in this time
+		     zone. Surefire's argLine is built from this property (JaCoCo adds its agent to it), and
+		     a JVM flag works on every OS, unlike the TZ environment variable, which Java ignores
+		     on Windows. -->
+		<argLine>-Duser.timezone=Europe/Zurich</argLine>
 		<hdf5.version>2.2.0-1.5.15-SNAPSHOT</hdf5.version>
 	</properties>
 
