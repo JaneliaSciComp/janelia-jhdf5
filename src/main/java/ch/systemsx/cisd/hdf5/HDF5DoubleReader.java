@@ -190,28 +190,20 @@ class HDF5DoubleReader implements IHDF5DoubleReader
 
     private double[] readDoubleArray(long dataSetId, ICleanUpRegistry registry)
     {
-        try
+        // Array data types need their own memory type. Check for them up front: the JNI
+        // layer rejects the (too small) buffer of a plain read before HDF5 itself would
+        // fail with H5E_CANTINIT.
+        final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
+        if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
         {
-            final DataSpaceParameters spaceParams =
-                    baseReader.getSpaceParameters(dataSetId, registry);
-            final double[] data = new double[spaceParams.blockSize];
-            baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_DOUBLE, spaceParams.memorySpaceId,
-                    spaceParams.dataSpaceId, data);
-            return data;
-        } catch (HDF5LibraryException ex)
-        {
-            if (ex.getMajorErrorNumber() == HDF5Constants.H5E_DATATYPE
-                    && ex.getMinorErrorNumber() == HDF5Constants.H5E_CANTINIT)
-            {
-                // Check whether it is an array data type.
-                final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
-                if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
-                {
-                    return readDoubleArrayFromArrayType(dataSetId, dataTypeId, registry);
-                }
-            }
-            throw ex;
+            return readDoubleArrayFromArrayType(dataSetId, dataTypeId, registry);
         }
+        final DataSpaceParameters spaceParams =
+                baseReader.getSpaceParameters(dataSetId, registry);
+        final double[] data = new double[spaceParams.blockSize];
+        baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_DOUBLE, spaceParams.memorySpaceId,
+                spaceParams.dataSpaceId, data);
+        return data;
     }
 
     private double[] readDoubleArrayFromArrayType(long dataSetId, final long dataTypeId,
@@ -571,28 +563,20 @@ class HDF5DoubleReader implements IHDF5DoubleReader
 
     MDDoubleArray readDoubleMDArray(long dataSetId, ICleanUpRegistry registry)
     {
-        try
+        // Array data types need their own memory type. Check for them up front: the JNI
+        // layer rejects the (too small) buffer of a plain read before HDF5 itself would
+        // fail with H5E_CANTINIT.
+        final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
+        if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
         {
-            final DataSpaceParameters spaceParams =
-                    baseReader.getSpaceParameters(dataSetId, registry);
-            final double[] data = new double[spaceParams.blockSize];
-            baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_DOUBLE, spaceParams.memorySpaceId,
-                    spaceParams.dataSpaceId, data);
-            return new MDDoubleArray(data, spaceParams.dimensions);
-        } catch (HDF5LibraryException ex)
-        {
-            if (ex.getMajorErrorNumber() == HDF5Constants.H5E_DATATYPE
-                    && ex.getMinorErrorNumber() == HDF5Constants.H5E_CANTINIT)
-            {
-                // Check whether it is an array data type.
-                final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
-                if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
-                {
-                    return readDoubleMDArrayFromArrayType(dataSetId, dataTypeId, registry);
-                }
-            }
-            throw ex;
+            return readDoubleMDArrayFromArrayType(dataSetId, dataTypeId, registry);
         }
+        final DataSpaceParameters spaceParams =
+                baseReader.getSpaceParameters(dataSetId, registry);
+        final double[] data = new double[spaceParams.blockSize];
+        baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_DOUBLE, spaceParams.memorySpaceId,
+                spaceParams.dataSpaceId, data);
+        return new MDDoubleArray(data, spaceParams.dimensions);
     }
 
     private MDDoubleArray readDoubleMDArrayFromArrayType(long dataSetId, final long dataTypeId,

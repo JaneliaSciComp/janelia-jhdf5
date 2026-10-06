@@ -16,7 +16,7 @@
 
 package ch.systemsx.cisd.hdf5;
 
-import static hdf.hdf5lib.H5.H5Dwrite;
+import static ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper.H5Dwrite;
 import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static hdf.hdf5lib.HDF5Constants.H5S_ALL;
 

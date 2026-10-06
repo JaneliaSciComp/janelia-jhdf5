@@ -1,7 +1,4 @@
 <suite name="All" verbose="1">
-    <listeners>
-        <listener class-name="ch.systemsx.cisd.hdf5.FinalizerFlushListener" />
-    </listeners>
     <test name="All">
         <groups>
             <run>

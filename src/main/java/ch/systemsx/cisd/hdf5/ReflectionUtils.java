@@ -65,6 +65,11 @@ public final class ReflectionUtils
         {
             for (Field f : c.getDeclaredFields())
             {
+                if (f.isSynthetic())
+                {
+                    // Compiler- or instrumentation-generated (e.g. this$0, $jacocoData), not data.
+                    continue;
+                }
                 final CompoundElement e = f.getAnnotation(CompoundElement.class);
                 if (e != null && org.apache.commons.lang3.StringUtils.isNotEmpty(e.memberName()))
                 {

@@ -40,8 +40,29 @@ import java.nio.charset.StandardCharsets;
 import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;
 import hdf.hdf5lib.HDFNativeData;
+import hdf.hdf5lib.exceptions.HDF5AttributeException;
+import hdf.hdf5lib.exceptions.HDF5BtreeException;
+import hdf.hdf5lib.exceptions.HDF5DataFiltersException;
+import hdf.hdf5lib.exceptions.HDF5DataStorageException;
+import hdf.hdf5lib.exceptions.HDF5DatasetInterfaceException;
+import hdf.hdf5lib.exceptions.HDF5DataspaceInterfaceException;
+import hdf.hdf5lib.exceptions.HDF5DatatypeInterfaceException;
 import hdf.hdf5lib.exceptions.HDF5Exception;
+import hdf.hdf5lib.exceptions.HDF5ExternalFileListException;
+import hdf.hdf5lib.exceptions.HDF5FileInterfaceException;
+import hdf.hdf5lib.exceptions.HDF5FunctionArgumentException;
+import hdf.hdf5lib.exceptions.HDF5FunctionEntryExitException;
+import hdf.hdf5lib.exceptions.HDF5HeapException;
+import hdf.hdf5lib.exceptions.HDF5IdException;
+import hdf.hdf5lib.exceptions.HDF5InternalErrorException;
 import hdf.hdf5lib.exceptions.HDF5LibraryException;
+import hdf.hdf5lib.exceptions.HDF5LowLevelIOException;
+import hdf.hdf5lib.exceptions.HDF5MetaDataCacheException;
+import hdf.hdf5lib.exceptions.HDF5ObjectHeaderException;
+import hdf.hdf5lib.exceptions.HDF5PropertyListInterfaceException;
+import hdf.hdf5lib.exceptions.HDF5ReferenceException;
+import hdf.hdf5lib.exceptions.HDF5ResourceUnavailableException;
+import hdf.hdf5lib.exceptions.HDF5SymbolTableException;
 import hdf.hdf5lib.structs.H5L_info_t;
 import hdf.hdf5lib.structs.H5O_info_t;
 
@@ -50,6 +71,7 @@ import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.hdf5.H5T_conv_except_func_t;
 import org.bytedeco.hdf5.H5AC_cache_image_config_t;
+import org.bytedeco.hdf5.H5O_token_t;
 import org.bytedeco.hdf5.global.hdf5;
 
 /**
@@ -424,9 +446,12 @@ public class HDFHelper
         {
             throw new HDF5LibraryException("H5Pcreate(H5P_DATASET_XFER) failed");
         }
-        if (hdf5.H5Pset_type_conv_cb(plist, ABORT_ON_OVERFLOW_CALLBACK, null) < 0)
+        synchronized (H5.class)
         {
-            throw new HDF5LibraryException("H5Pset_type_conv_cb failed");
+            if (hdf5.H5Pset_type_conv_cb(plist, ABORT_ON_OVERFLOW_CALLBACK, null) < 0)
+            {
+                throw libraryException("H5Pset_type_conv_cb");
+            }
         }
         return plist;
     }
@@ -442,9 +467,12 @@ public class HDFHelper
         {
             throw new HDF5LibraryException("H5Pcreate(H5P_DATASET_XFER) failed");
         }
-        if (hdf5.H5Pset_type_conv_cb(plist, ABORT_ALWAYS_CALLBACK, null) < 0)
+        synchronized (H5.class)
         {
-            throw new HDF5LibraryException("H5Pset_type_conv_cb failed");
+            if (hdf5.H5Pset_type_conv_cb(plist, ABORT_ALWAYS_CALLBACK, null) < 0)
+            {
+                throw libraryException("H5Pset_type_conv_cb");
+            }
         }
         return plist;
     }
@@ -471,12 +499,15 @@ public class HDFHelper
             config.save_resize_status(false);
             config.entry_ageout(hdf5.H5AC__CACHE_IMAGE__ENTRY_AGEOUT__NONE);
 
-            final int status = hdf5.H5Pset_mdc_image_config(fapl, config);
-            if (status < 0)
+            synchronized (H5.class)
             {
-                throw new HDF5LibraryException("H5Pset_mdc_image_config failed");
+                final int status = hdf5.H5Pset_mdc_image_config(fapl, config);
+                if (status < 0)
+                {
+                    throw libraryException("H5Pset_mdc_image_config");
+                }
+                return status;
             }
-            return status;
         }
     }
 
@@ -491,10 +522,12 @@ public class HDFHelper
         try (H5AC_cache_image_config_t config = new H5AC_cache_image_config_t())
         {
             config.version(hdf5.H5AC__CURR_CACHE_IMAGE_CONFIG_VERSION);
-            final int status = hdf5.H5Pget_mdc_image_config(fapl, config);
-            if (status < 0)
+            synchronized (H5.class)
             {
-                throw new HDF5LibraryException("H5Pget_mdc_image_config failed");
+                if (hdf5.H5Pget_mdc_image_config(fapl, config) < 0)
+                {
+                    throw libraryException("H5Pget_mdc_image_config");
+                }
             }
             return config.generate_image();
         }
@@ -513,10 +546,12 @@ public class HDFHelper
     {
         final long[] imageAddr = new long[1];
         final long[] imageLen = new long[1];
-        final int status = hdf5.H5Fget_mdc_image_info(file_id, imageAddr, imageLen);
-        if (status < 0)
+        synchronized (H5.class)
         {
-            throw new HDF5LibraryException("H5Fget_mdc_image_info failed");
+            if (hdf5.H5Fget_mdc_image_info(file_id, imageAddr, imageLen) < 0)
+            {
+                throw libraryException("H5Fget_mdc_image_info");
+            }
         }
         // HADDR_UNDEF is all-ones (UINT64_MAX), i.e. -1 as a signed 64-bit value.
         return imageAddr[0] != -1L && imageLen[0] > 0;
@@ -545,6 +580,204 @@ public class HDFHelper
                 hdf.hdf5lib.H5.H5Fclose(fileId);
             }
         }
+    }
+
+    // ////////////////////////////////////////////////////////////
+    // //
+    // Opening objects by reference token //
+    // //
+    // ////////////////////////////////////////////////////////////
+
+    /**
+     * Opens the object that the object token string <var>tokenStr</var> (as produced by
+     * <code>H5Otoken_to_str</code>) refers to in the file <var>fileId</var>.
+     */
+    public static long H5Oopen_by_token_str(long fileId, String tokenStr)
+    {
+        synchronized (H5.class)
+        {
+            try (H5O_token_t token = new H5O_token_t())
+            {
+                if (hdf5.H5Otoken_from_str(fileId, tokenStr, token) < 0)
+                {
+                    throw libraryException("H5Otoken_from_str");
+                }
+                final long objectId = hdf5.H5Oopen_by_token(fileId, token);
+                if (objectId < 0)
+                {
+                    throw libraryException("H5Oopen_by_token");
+                }
+                return objectId;
+            }
+        }
+    }
+
+    // ////////////////////////////////////////////////////////////
+    // //
+    // Raw byte buffer I/O //
+    // //
+    // ////////////////////////////////////////////////////////////
+
+    /*
+     * The byte[] overloads of hdf.hdf5lib.H5's H5Dread/H5Dwrite/H5Aread/H5Awrite no longer pass
+     * the buffer through untouched when the memory type contains variable-length data: they
+     * treat the buffer as a Java Object[] of Strings/ArrayLists (translate_rbuf/translate_wbuf
+     * in the JNI layer), which crashes the JVM when it is actually a byte[]. JHDF5 stores
+     * variable-length members of compounds as raw C pointers inside a byte[] (see
+     * compoundCpyVLStr above), so it needs the old raw semantics. The variants below provide
+     * them by going through org.bytedeco.hdf5 directly whenever the memory type contains a
+     * string or variable-length type, and delegate to hdf.hdf5lib.H5 otherwise.
+     */
+
+    private static boolean needsRawTransfer(long memTypeId)
+    {
+        return H5.H5Tdetect_class(memTypeId, HDF5Constants.H5T_STRING)
+                || H5.H5Tdetect_class(memTypeId, HDF5Constants.H5T_VLEN);
+    }
+
+    public static void H5Dwrite(long datasetId, long memTypeId, long memSpaceId,
+            long fileSpaceId, long xferPlistId, byte[] buf)
+    {
+        if (needsRawTransfer(memTypeId) == false)
+        {
+            H5.H5Dwrite(datasetId, memTypeId, memSpaceId, fileSpaceId, xferPlistId, buf);
+            return;
+        }
+        synchronized (H5.class)
+        {
+            try (BytePointer nativeBuf = new BytePointer(buf))
+            {
+                if (hdf5.H5Dwrite(datasetId, memTypeId, memSpaceId, fileSpaceId, xferPlistId,
+                        nativeBuf) < 0)
+                {
+                    throw libraryException("H5Dwrite");
+                }
+            }
+        }
+    }
+
+    public static void H5Dread(long datasetId, long memTypeId, long memSpaceId,
+            long fileSpaceId, long xferPlistId, byte[] buf)
+    {
+        if (needsRawTransfer(memTypeId) == false)
+        {
+            H5.H5Dread(datasetId, memTypeId, memSpaceId, fileSpaceId, xferPlistId, buf);
+            return;
+        }
+        synchronized (H5.class)
+        {
+            try (BytePointer nativeBuf = new BytePointer(buf.length))
+            {
+                if (hdf5.H5Dread(datasetId, memTypeId, memSpaceId, fileSpaceId, xferPlistId,
+                        nativeBuf) < 0)
+                {
+                    throw libraryException("H5Dread");
+                }
+                nativeBuf.get(buf);
+            }
+        }
+    }
+
+    public static void H5Awrite(long attributeId, long memTypeId, byte[] buf)
+    {
+        if (needsRawTransfer(memTypeId) == false)
+        {
+            H5.H5Awrite(attributeId, memTypeId, buf);
+            return;
+        }
+        synchronized (H5.class)
+        {
+            try (BytePointer nativeBuf = new BytePointer(buf))
+            {
+                if (hdf5.H5Awrite(attributeId, memTypeId, nativeBuf) < 0)
+                {
+                    throw libraryException("H5Awrite");
+                }
+            }
+        }
+    }
+
+    public static void H5Aread(long attributeId, long memTypeId, byte[] buf)
+    {
+        if (needsRawTransfer(memTypeId) == false)
+        {
+            H5.H5Aread(attributeId, memTypeId, buf);
+            return;
+        }
+        synchronized (H5.class)
+        {
+            try (BytePointer nativeBuf = new BytePointer(buf.length))
+            {
+                if (hdf5.H5Aread(attributeId, memTypeId, nativeBuf) < 0)
+                {
+                    throw libraryException("H5Aread");
+                }
+                nativeBuf.get(buf);
+            }
+        }
+    }
+
+    // ////////////////////////////////////////////////////////////
+    // //
+    // Error handling //
+    // //
+    // ////////////////////////////////////////////////////////////
+
+    /**
+     * Creates the exception for a failed call into org.bytedeco.hdf5, of the same
+     * {@link HDF5LibraryException} subclass that hdf.hdf5lib.H5's JNI layer would throw for the
+     * current HDF5 error stack. Must be called while still holding the <code>H5.class</code>
+     * lock, before any other HDF5 call can replace that error stack.
+     */
+    static HDF5LibraryException libraryException(String functionName)
+    {
+        final HDF5LibraryException probe = new HDF5LibraryException(functionName);
+        final long major = probe.getMajorErrorNumber();
+        final String message =
+                functionName + " failed: " + probe.getMinorError(probe.getMinorErrorNumber());
+        if (major == HDF5Constants.H5E_ARGS)
+            return new HDF5FunctionArgumentException(message);
+        if (major == HDF5Constants.H5E_RESOURCE)
+            return new HDF5ResourceUnavailableException(message);
+        if (major == HDF5Constants.H5E_INTERNAL)
+            return new HDF5InternalErrorException(message);
+        if (major == HDF5Constants.H5E_FILE)
+            return new HDF5FileInterfaceException(message);
+        if (major == HDF5Constants.H5E_IO)
+            return new HDF5LowLevelIOException(message);
+        if (major == HDF5Constants.H5E_FUNC)
+            return new HDF5FunctionEntryExitException(message);
+        if (major == HDF5Constants.H5E_ID)
+            return new HDF5IdException(message);
+        if (major == HDF5Constants.H5E_CACHE)
+            return new HDF5MetaDataCacheException(message);
+        if (major == HDF5Constants.H5E_BTREE)
+            return new HDF5BtreeException(message);
+        if (major == HDF5Constants.H5E_SYM)
+            return new HDF5SymbolTableException(message);
+        if (major == HDF5Constants.H5E_HEAP)
+            return new HDF5HeapException(message);
+        if (major == HDF5Constants.H5E_OHDR)
+            return new HDF5ObjectHeaderException(message);
+        if (major == HDF5Constants.H5E_DATATYPE)
+            return new HDF5DatatypeInterfaceException(message);
+        if (major == HDF5Constants.H5E_DATASPACE)
+            return new HDF5DataspaceInterfaceException(message);
+        if (major == HDF5Constants.H5E_DATASET)
+            return new HDF5DatasetInterfaceException(message);
+        if (major == HDF5Constants.H5E_STORAGE)
+            return new HDF5DataStorageException(message);
+        if (major == HDF5Constants.H5E_PLIST)
+            return new HDF5PropertyListInterfaceException(message);
+        if (major == HDF5Constants.H5E_ATTR)
+            return new HDF5AttributeException(message);
+        if (major == HDF5Constants.H5E_PLINE)
+            return new HDF5DataFiltersException(message);
+        if (major == HDF5Constants.H5E_EFL)
+            return new HDF5ExternalFileListException(message);
+        if (major == HDF5Constants.H5E_REFERENCE)
+            return new HDF5ReferenceException(message);
+        return new HDF5LibraryException(message);
     }
 
     // ////////////////////////////////////////////////////////////
