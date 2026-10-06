@@ -82,9 +82,8 @@
 			<classifier>macosx-arm64</classifier>
 		</dependency>
 		<dependency>
-		    <groupId>cisd</groupId>
-		    <artifactId>base</artifactId>
-		    <version>18.09.0</version>
+		    <groupId>com.github.jnr</groupId>
+		    <artifactId>jnr-posix</artifactId>
 		</dependency>
 		<dependency>
 		    <groupId>commons-io</groupId>
