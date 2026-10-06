@@ -71,16 +71,12 @@
 		<url>https://github.com/JaneliaSciComp/janelia-jhdf5/actions</url>
 	</ciManagement>
 	<dependencies>
+		<!-- The HDF5 classes plus the natives for every platform; JavaCPP loads the ones for the
+		     platform it runs on. Build with -Djavacpp.platform=<platform> to bundle just one. -->
 		<dependency>
 			<groupId>org.bytedeco</groupId>
-			<artifactId>hdf5</artifactId>
+			<artifactId>hdf5-platform</artifactId>
 			<version>${hdf5.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.bytedeco</groupId>
-			<artifactId>hdf5</artifactId>
-			<version>${hdf5.version}</version>
-			<classifier>macosx-arm64</classifier>
 		</dependency>
 		<dependency>
 		    <groupId>com.github.jnr</groupId>
@@ -166,72 +162,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<profiles>
-		<!-- The natives dependency above is fixed to macosx-arm64. These put the natives for the
-		     platform the build runs on onto the test classpath, so that the tests also run on
-		     the other platforms (e.g. in CI). -->
-		<profile>
-			<id>natives-linux-x86_64</id>
-			<activation>
-				<os><family>unix</family><name>Linux</name><arch>amd64</arch></os>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.bytedeco</groupId>
-					<artifactId>hdf5</artifactId>
-					<version>${hdf5.version}</version>
-					<classifier>linux-x86_64</classifier>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>natives-linux-arm64</id>
-			<activation>
-				<os><family>unix</family><name>Linux</name><arch>aarch64</arch></os>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.bytedeco</groupId>
-					<artifactId>hdf5</artifactId>
-					<version>${hdf5.version}</version>
-					<classifier>linux-arm64</classifier>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>natives-macosx-x86_64</id>
-			<activation>
-				<os><family>mac</family><arch>x86_64</arch></os>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.bytedeco</groupId>
-					<artifactId>hdf5</artifactId>
-					<version>${hdf5.version}</version>
-					<classifier>macosx-x86_64</classifier>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>natives-windows-x86_64</id>
-			<activation>
-				<os><family>windows</family><arch>amd64</arch></os>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.bytedeco</groupId>
-					<artifactId>hdf5</artifactId>
-					<version>${hdf5.version}</version>
-					<classifier>windows-x86_64</classifier>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-		</profile>
-	</profiles>
 
 
 	<properties>
