@@ -151,6 +151,14 @@ public final class Unix
             return linkType;
         }
 
+        /**
+         * Returns <code>true</code>, if this link is a symbolic link.
+         */
+        public boolean isSymbolicLink()
+        {
+            return linkType == FileLinkType.SYMLINK;
+        }
+
         public long getSize()
         {
             return size;
