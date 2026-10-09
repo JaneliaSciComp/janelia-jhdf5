@@ -1,5 +1,8 @@
 package ch.systemsx.cisd.hdf5.hdf5lib;
 
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
+
 import org.bytedeco.hdf5.hdf5_java;
 import org.bytedeco.javacpp.Loader;
 
@@ -18,6 +21,11 @@ import org.bytedeco.javacpp.Loader;
  * public entry points ({@code HDF5Factory}, {@code HDF5FactoryProvider}, {@link HDFHelper}) call it
  * from their static initializers. Code that touches {@code hdf.hdf5lib.H5} directly before any of
  * those should call {@link #load()} itself first.
+ * <p>
+ * Enum constants that are initialized from {@code HDF5Constants} need the same guarantee, but they
+ * are created before any static initializer of their enum runs, and their constructor arguments
+ * are evaluated before their constructor. They read the constant through {@link #intConstant} or
+ * {@link #longConstant} instead, which load the library first.
  */
 public final class HDF5NativeLibrary
 {
@@ -43,12 +51,38 @@ public final class HDF5NativeLibrary
         {
             return;
         }
-        loaded = true;
-        if (isSet(H5_PATH_PROPERTY) || isSet(H5_NAME_PROPERTY))
+        if (isSet(H5_PATH_PROPERTY) == false && isSet(H5_NAME_PROPERTY) == false)
         {
-            return;
+            // Loader.load() returns null when JavaCPP's library loading is disabled.
+            final String path = Loader.load(hdf5_java.class);
+            if (path != null)
+            {
+                System.setProperty(H5_PATH_PROPERTY, path);
+            }
         }
-        System.setProperty(H5_PATH_PROPERTY, Loader.load(hdf5_java.class));
+        // Only now, so that a failed attempt (e.g. no natives for this platform) is retried and
+        // reported again by the next caller, instead of surfacing later as an obscure
+        // UnsatisfiedLinkError from H5's static initializer.
+        loaded = true;
+    }
+
+    /**
+     * Returns {@code constant.getAsInt()}, after {@link #load()}. For initializing enum constants
+     * from {@code HDF5Constants}, e.g. {@code COMPACT(intConstant(() -> H5D_COMPACT))}.
+     */
+    public static int intConstant(IntSupplier constant)
+    {
+        load();
+        return constant.getAsInt();
+    }
+
+    /**
+     * Returns {@code constant.getAsLong()}, after {@link #load()}. See {@link #intConstant}.
+     */
+    public static long longConstant(LongSupplier constant)
+    {
+        load();
+        return constant.getAsLong();
     }
 
     private static boolean isSet(String key)

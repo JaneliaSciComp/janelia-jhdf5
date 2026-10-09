@@ -16,6 +16,7 @@
 
 package ch.systemsx.cisd.hdf5;
 
+import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary.intConstant;
 import static hdf.hdf5lib.HDF5Constants.H5T_BITFIELD;
 import static hdf.hdf5lib.HDF5Constants.H5T_COMPOUND;
 import static hdf.hdf5lib.HDF5Constants.H5T_ENUM;
@@ -47,18 +48,23 @@ public enum HDF5DataClass
 {
     // Implementation note: The order matters! ENUM needs to be before INTEGER, as H5Tdetect_class
     // will return TRUE for ENUM arrays when trying to detect an INTEGER class.
-    BITFIELD(H5T_BITFIELD, new BasicJavaTypeProvider(BitSet.class, null, null, null)), ENUM(
-            H5T_ENUM, new BasicJavaTypeProvider(HDF5EnumerationValue.class,
-                    HDF5EnumerationValueArray.class, null, null)), INTEGER(H5T_INTEGER,
-            new IntJavaTypeProvider()), FLOAT(H5T_FLOAT, new FloatJavaTypeProvider()), STRING(
-            H5T_STRING, new BasicJavaTypeProvider(String.class, String[].class, String[][].class,
-                    MDArray.class)), OPAQUE(H5T_OPAQUE, new BasicJavaTypeProvider(byte.class,
-            byte[].class, byte[][].class, MDByteArray.class)), BOOLEAN(-1,
-            new BasicJavaTypeProvider(boolean.class, BitSet.class, null, null)), COMPOUND(
-            H5T_COMPOUND, new BasicJavaTypeProvider(Map.class, Map[].class, Map[][].class,
-                    MDArray.class)), REFERENCE(H5T_REFERENCE, new BasicJavaTypeProvider(
-            String.class, String[].class, String[][].class, MDArray.class)), OTHER(-1,
-            new BasicJavaTypeProvider(null, null, null, null));
+    BITFIELD(intConstant(() -> H5T_BITFIELD),
+            new BasicJavaTypeProvider(BitSet.class, null, null, null)),
+    ENUM(intConstant(() -> H5T_ENUM),
+            new BasicJavaTypeProvider(HDF5EnumerationValue.class, HDF5EnumerationValueArray.class,
+                    null, null)),
+    INTEGER(intConstant(() -> H5T_INTEGER), new IntJavaTypeProvider()),
+    FLOAT(intConstant(() -> H5T_FLOAT), new FloatJavaTypeProvider()),
+    STRING(intConstant(() -> H5T_STRING),
+            new BasicJavaTypeProvider(String.class, String[].class, String[][].class, MDArray.class)),
+    OPAQUE(intConstant(() -> H5T_OPAQUE),
+            new BasicJavaTypeProvider(byte.class, byte[].class, byte[][].class, MDByteArray.class)),
+    BOOLEAN(-1, new BasicJavaTypeProvider(boolean.class, BitSet.class, null, null)),
+    COMPOUND(intConstant(() -> H5T_COMPOUND),
+            new BasicJavaTypeProvider(Map.class, Map[].class, Map[][].class, MDArray.class)),
+    REFERENCE(intConstant(() -> H5T_REFERENCE),
+            new BasicJavaTypeProvider(String.class, String[].class, String[][].class, MDArray.class)),
+    OTHER(-1, new BasicJavaTypeProvider(null, null, null, null));
 
     /**
      * A role that can provide a java type for a data class, rank and element size.

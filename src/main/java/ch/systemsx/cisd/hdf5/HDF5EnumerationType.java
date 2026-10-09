@@ -16,6 +16,7 @@
 
 package ch.systemsx.cisd.hdf5;
 
+import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary.longConstant;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT32;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT8;
@@ -43,15 +44,15 @@ public final class HDF5EnumerationType extends HDF5DataType implements Iterable<
         /**
          * One byte, for up to 255 alternatives.
          */
-        BYTE(1, H5T_NATIVE_INT8, H5T_STD_U8LE),
+        BYTE(1, longConstant(() -> H5T_NATIVE_INT8), longConstant(() -> H5T_STD_U8LE)),
         /**
          * Two bytes, for up to 65535 alternatives.
          */
-        SHORT(2, H5T_NATIVE_INT16, H5T_STD_U16LE),
+        SHORT(2, longConstant(() -> H5T_NATIVE_INT16), longConstant(() -> H5T_STD_U16LE)),
         /**
          * Four bytes, for more than 65535 alternatives.
          */
-        INT(4, H5T_NATIVE_INT32, H5T_STD_U32LE);
+        INT(4, longConstant(() -> H5T_NATIVE_INT32), longConstant(() -> H5T_STD_U32LE));
 
         private final byte storageSize;
 
