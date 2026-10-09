@@ -1,5 +1,6 @@
 package ch.systemsx.cisd.hdf5;
 
+import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary.intConstant;
 import hdf.hdf5lib.HDF5Constants;
 
 /**
@@ -9,8 +10,8 @@ import hdf.hdf5lib.HDF5Constants;
  */
 public enum HDF5StorageLayout
 {
-    COMPACT(HDF5Constants.H5D_COMPACT), CONTIGUOUS(HDF5Constants.H5D_CONTIGUOUS), CHUNKED(
-            HDF5Constants.H5D_CHUNKED), NOT_APPLICABLE(-1);
+    COMPACT(intConstant(() -> HDF5Constants.H5D_COMPACT)), CONTIGUOUS(intConstant(() -> HDF5Constants.H5D_CONTIGUOUS)), CHUNKED(
+            intConstant(() -> HDF5Constants.H5D_CHUNKED)), NOT_APPLICABLE(-1);
 
     private int id;
 

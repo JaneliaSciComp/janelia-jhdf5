@@ -16,6 +16,7 @@
 
 package ch.systemsx.cisd.hdf5;
 
+import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary.intConstant;
 import static hdf.hdf5lib.HDF5Constants.H5T_CSET_ASCII;
 import static hdf.hdf5lib.HDF5Constants.H5T_CSET_UTF8;
 
@@ -26,8 +27,8 @@ import static hdf.hdf5lib.HDF5Constants.H5T_CSET_UTF8;
  */
 public enum CharacterEncoding
 {
-    ASCII("ASCII", H5T_CSET_ASCII, 1), 
-    UTF8("UTF8", H5T_CSET_UTF8, 4);
+    ASCII("ASCII", intConstant(() -> H5T_CSET_ASCII), 1), 
+    UTF8("UTF8", intConstant(() -> H5T_CSET_UTF8), 4);
 
     private final String charSetName;
     
