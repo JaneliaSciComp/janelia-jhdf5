@@ -524,7 +524,7 @@ public class HDF5RoundtripTest
     @Test
     public void testWriteToEmptyFile()
     {
-        final File file = new File(workingDirectory, "testStrangeDataSetName.h5");
+        final File file = new File(workingDirectory, "writeToEmptyFile.h5");
         file.delete();
         assertFalse(file.exists());
         try
@@ -1360,7 +1360,7 @@ public class HDF5RoundtripTest
     @Test
     public void testFixedLengthStringArray()
     {
-        final File datasetFile = new File(workingDirectory, "stringArray.h5");
+        final File datasetFile = new File(workingDirectory, "fixedLengthStringArray.h5");
         datasetFile.delete();
         assertFalse(datasetFile.exists());
         datasetFile.deleteOnExit();
@@ -1646,7 +1646,7 @@ public class HDF5RoundtripTest
     @Test
     public void testAccessClosedReaderWriter()
     {
-        final File datasetFile = new File(workingDirectory, "datasetsNonExtendable.h5");
+        final File datasetFile = new File(workingDirectory, "accessClosedReaderWriter.h5");
         datasetFile.delete();
         assertFalse(datasetFile.exists());
         datasetFile.deleteOnExit();
@@ -2695,7 +2695,7 @@ public class HDF5RoundtripTest
     @Test
     public void testWriteByteArrayDataSetBlockWiseMismatch()
     {
-        final File datasetFile = new File(workingDirectory, "writeByteArrayBlockWise.h5");
+        final File datasetFile = new File(workingDirectory, "writeByteArrayBlockWiseMismatch.h5");
         datasetFile.delete();
         assertFalse(datasetFile.exists());
         datasetFile.deleteOnExit();
@@ -2764,7 +2764,7 @@ public class HDF5RoundtripTest
     @Test
     public void testWriteOpaqueByteArrayDataSetBlockWiseMismatch()
     {
-        final File datasetFile = new File(workingDirectory, "writeOpaqueByteArrayBlockWise.h5");
+        final File datasetFile = new File(workingDirectory, "writeOpaqueByteArrayBlockWiseMismatch.h5");
         datasetFile.delete();
         assertFalse(datasetFile.exists());
         datasetFile.deleteOnExit();
@@ -3439,7 +3439,7 @@ public class HDF5RoundtripTest
     public void testMDShortArrayRankMismatchDetached()
     {
         assertEquals(0, HDF5Factory.getOpenHDF5FileCount());
-        final File shortArrayFile = new File(workingDirectory, "MDShortArrayRankMismatch.h5");
+        final File shortArrayFile = new File(workingDirectory, "MDShortArrayRankMismatchDetached.h5");
         shortArrayFile.delete();
         assertFalse(shortArrayFile.exists());
         shortArrayFile.deleteOnExit();
@@ -5416,7 +5416,7 @@ public class HDF5RoundtripTest
     @Test
     public void testTimeDurationMDArray()
     {
-        final File datasetFile = new File(workingDirectory, "timedurationarray.h5");
+        final File datasetFile = new File(workingDirectory, "timedurationmdarray.h5");
         final String timeDurationDS = "someDuration";
         final HDF5TimeDurationMDArray durationsWritten =
                 new HDF5TimeDurationMDArray(new HDF5TimeDuration[]
@@ -6440,7 +6440,7 @@ public class HDF5RoundtripTest
     @Test(expectedExceptions = HDF5SymbolTableException.class)
     public void testGetDataSetInformationFailed()
     {
-        final File file = new File(workingDirectory, "dsInfo.h5");
+        final File file = new File(workingDirectory, "dsInfoFailed.h5");
         file.delete();
         assertFalse(file.exists());
         file.deleteOnExit();
