@@ -355,6 +355,11 @@ public final class HDF5CompoundMemberMapping
         {
             for (Field f : c.getDeclaredFields())
             {
+                if (f.isSynthetic())
+                {
+                    // Compiler- or instrumentation-generated (e.g. this$0, $jacocoData), not data.
+                    continue;
+                }
                 final HDF5EnumerationType enumTypeOrNull =
                         (hintsOrNull != null) ? hintsOrNull.tryGetEnumType(f.getName()) : null;
                 final CompoundElement e = f.getAnnotation(CompoundElement.class);

@@ -190,28 +190,20 @@ class HDF5UnsignedIntReader implements IHDF5IntReader
 
     private int[] readIntArray(long dataSetId, ICleanUpRegistry registry)
     {
-        try
+        // Array data types need their own memory type. Check for them up front: the JNI
+        // layer rejects the (too small) buffer of a plain read before HDF5 itself would
+        // fail with H5E_CANTINIT.
+        final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
+        if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
         {
-            final DataSpaceParameters spaceParams =
-                    baseReader.getSpaceParameters(dataSetId, registry);
-            final int[] data = new int[spaceParams.blockSize];
-            baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_UINT32, spaceParams.memorySpaceId,
-                    spaceParams.dataSpaceId, data);
-            return data;
-        } catch (HDF5LibraryException ex)
-        {
-            if (ex.getMajorErrorNumber() == HDF5Constants.H5E_DATATYPE
-                    && ex.getMinorErrorNumber() == HDF5Constants.H5E_CANTINIT)
-            {
-                // Check whether it is an array data type.
-                final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
-                if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
-                {
-                    return readIntArrayFromArrayType(dataSetId, dataTypeId, registry);
-                }
-            }
-            throw ex;
+            return readIntArrayFromArrayType(dataSetId, dataTypeId, registry);
         }
+        final DataSpaceParameters spaceParams =
+                baseReader.getSpaceParameters(dataSetId, registry);
+        final int[] data = new int[spaceParams.blockSize];
+        baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_UINT32, spaceParams.memorySpaceId,
+                spaceParams.dataSpaceId, data);
+        return data;
     }
 
     private int[] readIntArrayFromArrayType(long dataSetId, final long dataTypeId,
@@ -571,28 +563,20 @@ class HDF5UnsignedIntReader implements IHDF5IntReader
 
     MDIntArray readIntMDArray(long dataSetId, ICleanUpRegistry registry)
     {
-        try
+        // Array data types need their own memory type. Check for them up front: the JNI
+        // layer rejects the (too small) buffer of a plain read before HDF5 itself would
+        // fail with H5E_CANTINIT.
+        final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
+        if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
         {
-            final DataSpaceParameters spaceParams =
-                    baseReader.getSpaceParameters(dataSetId, registry);
-            final int[] data = new int[spaceParams.blockSize];
-            baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_UINT32, spaceParams.memorySpaceId,
-                    spaceParams.dataSpaceId, data);
-            return new MDIntArray(data, spaceParams.dimensions);
-        } catch (HDF5LibraryException ex)
-        {
-            if (ex.getMajorErrorNumber() == HDF5Constants.H5E_DATATYPE
-                    && ex.getMinorErrorNumber() == HDF5Constants.H5E_CANTINIT)
-            {
-                // Check whether it is an array data type.
-                final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
-                if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
-                {
-                    return readIntMDArrayFromArrayType(dataSetId, dataTypeId, registry);
-                }
-            }
-            throw ex;
+            return readIntMDArrayFromArrayType(dataSetId, dataTypeId, registry);
         }
+        final DataSpaceParameters spaceParams =
+                baseReader.getSpaceParameters(dataSetId, registry);
+        final int[] data = new int[spaceParams.blockSize];
+        baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_UINT32, spaceParams.memorySpaceId,
+                spaceParams.dataSpaceId, data);
+        return new MDIntArray(data, spaceParams.dimensions);
     }
 
     private MDIntArray readIntMDArrayFromArrayType(long dataSetId, final long dataTypeId,

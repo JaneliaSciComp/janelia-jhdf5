@@ -11,15 +11,15 @@
 	<artifactId>janelia-jhdf5</artifactId>
 	<version>22.03.01-SNAPSHOT</version>
 	<name>JHDF5</name>
-	<description>SciJava JHDF5 from Janelia</description>
-	<url>https://mycompany.com/imagej/gauss-filtering/</url>                   <!-- FIXME: Your project website here -->
-	<inceptionYear>2023</inceptionYear>                                        <!-- FIXME: Your project starting year here -->
+	<description>JHDF5, the high-level Java API for HDF5 from ETH Zürich SIS, on HDF5 2.x with native libraries from org.bytedeco:hdf5.</description>
+	<url>https://github.com/JaneliaSciComp/janelia-jhdf5</url>
+	<inceptionYear>2023</inceptionYear>
 	<organization>
-		<name>Howard Hughes Medical Institute</name>           <!-- FIXME: Your organization name here -->
-		<url>https://www.janelia.org/</url> <!-- FIXME: Your organization website here -->
+		<name>Howard Hughes Medical Institute</name>
+		<url>https://www.janelia.org/</url>
 	</organization>
 	<licenses>
-		<license>                         <!-- FIXME: Your license here -->
+		<license>
 			<name>BSD-3-Clause</name>
 			<url>https://www.janelia.org/open-science/software-licensing</url>
 			<distribution>repo</distribution>
@@ -44,8 +44,13 @@
 		</developer>
 	</developers>
 	<contributors>
+		<!-- Original author of JHDF5 and cisd:base at ETH Zürich CISD/SIS. -->
 		<contributor>
-			<name>None</name>
+			<name>Bernd Rinn</name>
+			<organization>ETH Zürich, Scientific IT Services</organization>
+			<roles>
+				<role>founder</role>
+			</roles>
 		</contributor>
 	</contributors>
 
@@ -67,18 +72,20 @@
 		<url>https://github.com/JaneliaSciComp/janelia-jhdf5</url>
 	</issueManagement>
 	<ciManagement>
-		<system>None</system>
+		<system>GitHub Actions</system>
+		<url>https://github.com/JaneliaSciComp/janelia-jhdf5/actions</url>
 	</ciManagement>
 	<dependencies>
+		<!-- The HDF5 classes plus the natives for every platform; JavaCPP loads the ones for the
+		     platform it runs on. Build with -Djavacpp.platform=<platform> to bundle just one. -->
 		<dependency>
 			<groupId>org.bytedeco</groupId>
 			<artifactId>hdf5-platform</artifactId>
-			<version>1.14.0-1.5.9-SNAPSHOT</version>
+			<version>${hdf5.version}</version>
 		</dependency>
 		<dependency>
-		    <groupId>cisd</groupId>
-		    <artifactId>base</artifactId>
-		    <version>18.09.0</version>
+		    <groupId>com.github.jnr</groupId>
+		    <artifactId>jnr-posix</artifactId>
 		</dependency>
 		<dependency>
 		    <groupId>commons-io</groupId>
@@ -92,14 +99,71 @@
 			<groupId>args4j</groupId>
 			<artifactId>args4j</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>7.5.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jmock</groupId>
+			<artifactId>jmock</artifactId>
+			<version>2.12.0</version>
+			<scope>test</scope>
+			<exclusions>
+				<!-- Annotation-only jars, not referenced by our test code; they duplicate
+				     classes with transitive dependencies already pulled in elsewhere. -->
+				<exclusion>
+					<groupId>com.google.code.findbugs</groupId>
+					<artifactId>annotations</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>net.jcip</groupId>
+					<artifactId>jcip-annotations</artifactId>
+				</exclusion>
+				<!-- TestNG already brings in the modern, unified org.hamcrest:hamcrest,
+				     which already provides everything jmock's own hamcrest-core needs. -->
+				<exclusion>
+					<groupId>org.hamcrest</groupId>
+					<artifactId>hamcrest-core</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- org.bytedeco:hdf5 leaves slf4j <optional>, so consumers (here, our own
+		     tests) must supply a binding themselves; hdf.hdf5lib.H5's static
+		     initializer references it unconditionally. -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-nop</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
-	<pluginRepositories>
-		<pluginRepository>
-			<id>sonatype-nexus-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</pluginRepository>
-	</pluginRepositories>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<suiteXmlFiles>
+						<suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+					</suiteXmlFiles>
+					<environmentVariables>
+						<!-- The tests close an HDF5 file and immediately reopen it. On machines
+						     where another process (endpoint security scanners, cloud sync) briefly
+						     opens freshly written files, HDF5's own file locking then fails
+						     intermittently with "Unable to lock file". The tests run in a single
+						     process and do not rely on that locking. -->
+						<HDF5_USE_FILE_LOCKING>FALSE</HDF5_USE_FILE_LOCKING>
+					</environmentVariables>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 
 	<properties>
@@ -107,8 +171,13 @@
 		<main-class>org.scijava.janelia.jhdf5.Demo</main-class>
 		<license.licenseName>BSD-3-Clause</license.licenseName>
 		<license.copyrightOwners>Howard Hughes Medical Institute</license.copyrightOwners>
-		<javacpp.version>1.5.9-SNAPSHOT</javacpp.version>
-		<hdf5.version>1.14.0-1.5.9-SNAPSHOT</hdf5.version>
+		<javacpp.version>1.5.15-SNAPSHOT</javacpp.version>
+		<!-- HDF5ArchiverTest's expected listings (and its .h5ar fixtures) were written in this time
+		     zone. Surefire's argLine is built from this property (JaCoCo adds its agent to it), and
+		     a JVM flag works on every OS, unlike the TZ environment variable, which Java ignores
+		     on Windows. -->
+		<argLine>-Duser.timezone=Europe/Zurich</argLine>
+		<hdf5.version>2.2.0-1.5.15-SNAPSHOT</hdf5.version>
 	</properties>
 
 	<repositories>
@@ -116,10 +185,71 @@
 			<id>scijava.public</id>
 			<url>https://maven.scijava.org/content/groups/public</url>
 		</repository>
+		<!-- org.bytedeco snapshots (the oss.sonatype.org snapshot repository is shut down). -->
 		<repository>
-			<id>sonatype-nexus-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<id>central-portal-snapshots</id>
+			<url>https://central.sonatype.com/repository/maven-snapshots/</url>
+			<releases><enabled>false</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
 	</repositories>
+
+	<profiles>
+		<!-- JMH benchmarks under src/benchmark/java; not part of the normal build or test run.
+		       mvn -Pbenchmarks test-compile exec:exec                                 (all of them)
+		       mvn -Pbenchmarks test-compile exec:exec -Dbenchmarks.args="ChunkIter -p size=256"
+		     benchmarks.args are JMH's own arguments (-Dbenchmarks.args=-h lists them). -->
+		<profile>
+			<id>benchmarks</id>
+			<properties>
+				<benchmarks.args>.*</benchmarks.args>
+			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>org.openjdk.jmh</groupId>
+					<artifactId>jmh-core</artifactId>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.openjdk.jmh</groupId>
+					<artifactId>jmh-generator-annprocess</artifactId>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>add-benchmark-sources</id>
+								<phase>generate-test-sources</phase>
+								<goals>
+									<goal>add-test-source</goal>
+								</goals>
+								<configuration>
+									<sources>
+										<source>src/benchmark/java</source>
+									</sources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.5.0</version>
+						<configuration>
+							<!-- A separate java process, so that JMH can fork its own JVMs from it. -->
+							<executable>java</executable>
+							<classpathScope>test</classpathScope>
+							<commandlineArgs>-classpath %classpath org.openjdk.jmh.Main ${benchmarks.args}</commandlineArgs>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>

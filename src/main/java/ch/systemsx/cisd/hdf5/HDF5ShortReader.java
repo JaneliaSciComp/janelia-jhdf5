@@ -190,28 +190,20 @@ class HDF5ShortReader implements IHDF5ShortReader
 
     private short[] readShortArray(long dataSetId, ICleanUpRegistry registry)
     {
-        try
+        // Array data types need their own memory type. Check for them up front: the JNI
+        // layer rejects the (too small) buffer of a plain read before HDF5 itself would
+        // fail with H5E_CANTINIT.
+        final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
+        if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
         {
-            final DataSpaceParameters spaceParams =
-                    baseReader.getSpaceParameters(dataSetId, registry);
-            final short[] data = new short[spaceParams.blockSize];
-            baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_INT16, spaceParams.memorySpaceId,
-                    spaceParams.dataSpaceId, data);
-            return data;
-        } catch (HDF5LibraryException ex)
-        {
-            if (ex.getMajorErrorNumber() == HDF5Constants.H5E_DATATYPE
-                    && ex.getMinorErrorNumber() == HDF5Constants.H5E_CANTINIT)
-            {
-                // Check whether it is an array data type.
-                final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
-                if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
-                {
-                    return readShortArrayFromArrayType(dataSetId, dataTypeId, registry);
-                }
-            }
-            throw ex;
+            return readShortArrayFromArrayType(dataSetId, dataTypeId, registry);
         }
+        final DataSpaceParameters spaceParams =
+                baseReader.getSpaceParameters(dataSetId, registry);
+        final short[] data = new short[spaceParams.blockSize];
+        baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_INT16, spaceParams.memorySpaceId,
+                spaceParams.dataSpaceId, data);
+        return data;
     }
 
     private short[] readShortArrayFromArrayType(long dataSetId, final long dataTypeId,
@@ -571,28 +563,20 @@ class HDF5ShortReader implements IHDF5ShortReader
 
     MDShortArray readShortMDArray(long dataSetId, ICleanUpRegistry registry)
     {
-        try
+        // Array data types need their own memory type. Check for them up front: the JNI
+        // layer rejects the (too small) buffer of a plain read before HDF5 itself would
+        // fail with H5E_CANTINIT.
+        final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
+        if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
         {
-            final DataSpaceParameters spaceParams =
-                    baseReader.getSpaceParameters(dataSetId, registry);
-            final short[] data = new short[spaceParams.blockSize];
-            baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_INT16, spaceParams.memorySpaceId,
-                    spaceParams.dataSpaceId, data);
-            return new MDShortArray(data, spaceParams.dimensions);
-        } catch (HDF5LibraryException ex)
-        {
-            if (ex.getMajorErrorNumber() == HDF5Constants.H5E_DATATYPE
-                    && ex.getMinorErrorNumber() == HDF5Constants.H5E_CANTINIT)
-            {
-                // Check whether it is an array data type.
-                final long dataTypeId = baseReader.h5.getDataTypeForDataSet(dataSetId, registry);
-                if (baseReader.h5.getClassType(dataTypeId) == HDF5Constants.H5T_ARRAY)
-                {
-                    return readShortMDArrayFromArrayType(dataSetId, dataTypeId, registry);
-                }
-            }
-            throw ex;
+            return readShortMDArrayFromArrayType(dataSetId, dataTypeId, registry);
         }
+        final DataSpaceParameters spaceParams =
+                baseReader.getSpaceParameters(dataSetId, registry);
+        final short[] data = new short[spaceParams.blockSize];
+        baseReader.h5.readDataSet(dataSetId, H5T_NATIVE_INT16, spaceParams.memorySpaceId,
+                spaceParams.dataSpaceId, data);
+        return new MDShortArray(data, spaceParams.dimensions);
     }
 
     private MDShortArray readShortMDArrayFromArrayType(long dataSetId, final long dataTypeId,

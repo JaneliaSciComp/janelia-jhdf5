@@ -57,6 +57,7 @@ import ch.systemsx.cisd.hdf5.IHDF5WriterConfigurator.FileFormatVersionBounds;
 import ch.systemsx.cisd.hdf5.IHDF5WriterConfigurator.SyncMode;
 import ch.systemsx.cisd.hdf5.cleanup.ICallableWithCleanUp;
 import ch.systemsx.cisd.hdf5.cleanup.ICleanUpRegistry;
+import ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper;
 import ch.systemsx.cisd.hdf5.exceptions.HDF5FileNotFoundException;
 
 /**
@@ -645,7 +646,8 @@ final class HDF5BaseWriter extends HDF5BaseReader
                     h5.createScalarDataSet(fileId, storageDataTypeId, dataSetPath, compactLayout,
                             registry);
         }
-        H5Dwrite(dataSetId, nativeDataTypeId, H5S_SCALAR, H5S_SCALAR, H5P_DEFAULT, value);
+        HDFHelper.H5Dwrite(dataSetId, nativeDataTypeId, H5S_SCALAR, H5S_SCALAR, H5P_DEFAULT,
+                value);
         return dataSetId;
     }
 

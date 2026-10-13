@@ -18,7 +18,9 @@ package ch.systemsx.cisd.hdf5;
 
 import java.io.File;
 
+import ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary;
 import hdf.hdf5lib.H5;
+import hdf.hdf5lib.HDF5Constants;
 
 /**
  * A static wrapper for the {@link IHDF5Factory} for creating writers and readers of HDF5 files. For straight-forward creation, see methods
@@ -29,6 +31,11 @@ import hdf.hdf5lib.H5;
  */
 public final class HDF5Factory
 {
+
+    static
+    {
+        HDF5NativeLibrary.load();
+    }
 
     /**
      * Opens an HDF5 <var>file</var> for writing and reading. If the file does not yet exist, it will be created.
@@ -136,8 +143,7 @@ public final class HDF5Factory
     @Deprecated
     public static int getOpenHDF5FileCount()
     {
-        // TODO: FIXME, derive from open object IDs?
-        return 0;
+        return (int) H5.H5Fget_obj_count(HDF5Constants.H5F_OBJ_ALL, HDF5Constants.H5F_OBJ_FILE);
     }
 
     /**

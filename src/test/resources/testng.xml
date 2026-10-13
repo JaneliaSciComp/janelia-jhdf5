@@ -1,0 +1,13 @@
+<suite name="All" verbose="1">
+    <test name="All">
+        <groups>
+            <run>
+                <exclude name="broken" />
+            </run>
+        </groups>
+        <packages>
+            <package name="ch.systemsx.cisd.hdf5.*" />
+            <package name="ch.systemsx.cisd.base.*" />
+        </packages>
+    </test>
+</suite>

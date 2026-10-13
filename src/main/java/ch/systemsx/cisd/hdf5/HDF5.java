@@ -58,15 +58,10 @@ import static hdf.hdf5lib.HDF5Constants.H5T_VARIABLE;
 import static hdf.hdf5lib.HDF5Constants.H5Z_SO_FLOAT_DSCALE;
 import static hdf.hdf5lib.HDF5Constants.H5Z_SO_INT;
 
-import static org.bytedeco.hdf5.global.hdf5.H5Otoken_from_str;
-import static org.bytedeco.hdf5.global.hdf5.H5Oopen_by_token;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-
-import org.bytedeco.hdf5.H5O_token_t;
 
 import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;
@@ -284,10 +279,8 @@ class HDF5
     public long openObject(long fileId, String path, ICleanUpRegistry registry)
     {
         checkMaxLength(path);
-        H5O_token_t token = new H5O_token_t();
-        H5Otoken_from_str(fileId, path.substring(1), token);
         final long objectId =
-                isReference(path) ? H5Oopen_by_token(fileId, token)
+                isReference(path) ? HDFHelper.H5Oopen_by_token_str(fileId, path.substring(1))
                         : H5Oopen(fileId, path, H5P_DEFAULT);
         registry.registerCleanUp(new Runnable()
             {
@@ -379,10 +372,9 @@ class HDF5
     public long openGroup(long fileId, String path, ICleanUpRegistry registry)
     {
         checkMaxLength(path);
-        H5O_token_t token = new H5O_token_t();
-        H5Otoken_from_str(fileId, path.substring(1), token);
-        final long groupId = isReference(path) ? H5Oopen_by_token(fileId, token)
-                : H5Gopen(fileId, path, H5P_DEFAULT);
+        final long groupId =
+                isReference(path) ? HDFHelper.H5Oopen_by_token_str(fileId, path.substring(1))
+                        : H5Gopen(fileId, path, H5P_DEFAULT);
         registry.registerCleanUp(new Runnable()
             {
                 @Override
@@ -941,10 +933,9 @@ class HDF5
     public long openDataSet(long fileId, String path, ICleanUpRegistry registry)
     {
         checkMaxLength(path);
-        H5O_token_t token = new H5O_token_t();
-        H5Otoken_from_str(fileId, path.substring(1), token);
-        final long dataSetId = isReference(path) ? H5Oopen_by_token(fileId, token)
-                : H5Dopen(fileId, path, H5P_DEFAULT);
+        final long dataSetId =
+                isReference(path) ? HDFHelper.H5Oopen_by_token_str(fileId, path.substring(1))
+                        : H5Dopen(fileId, path, H5P_DEFAULT);
         if (registry != null)
         {
             registry.registerCleanUp(new Runnable()
@@ -1139,13 +1130,14 @@ class HDF5
 
     public void readDataSetNonNumeric(long dataSetId, long nativeDataTypeId, byte[] data)
     {
-        H5Dread(dataSetId, nativeDataTypeId, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+        HDFHelper.H5Dread(dataSetId, nativeDataTypeId, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
     }
 
     public void readDataSetNonNumeric(long dataSetId, long nativeDataTypeId, long memorySpaceId,
             long fileSpaceId, byte[] data)
     {
-        H5Dread(dataSetId, nativeDataTypeId, memorySpaceId, fileSpaceId, H5P_DEFAULT, data);
+        HDFHelper.H5Dread(dataSetId, nativeDataTypeId, memorySpaceId, fileSpaceId, H5P_DEFAULT,
+                data);
     }
 
     public void readDataSetString(long dataSetId, long nativeDataTypeId, String[] data)
@@ -1161,8 +1153,8 @@ class HDF5
 
     public void readDataSet(long dataSetId, long nativeDataTypeId, byte[] data)
     {
-        H5Dread(dataSetId, nativeDataTypeId, H5S_ALL, H5S_ALL, numericConversionXferPropertyListID,
-                data);
+        HDFHelper.H5Dread(dataSetId, nativeDataTypeId, H5S_ALL, H5S_ALL,
+                numericConversionXferPropertyListID, data);
     }
 
     public void readDataSet(long dataSetId, long nativeDataTypeId, short[] data)
@@ -1198,7 +1190,7 @@ class HDF5
     public void readDataSet(long dataSetId, long nativeDataTypeId, long memorySpaceId,
             long fileSpaceId, byte[] data)
     {
-        H5Dread(dataSetId, nativeDataTypeId, memorySpaceId, fileSpaceId,
+        HDFHelper.H5Dread(dataSetId, nativeDataTypeId, memorySpaceId, fileSpaceId,
                 numericConversionXferPropertyListID, data);
     }
 
@@ -1352,11 +1344,25 @@ class HDF5
         return attributeNames;
     }
 
+    /**
+     * Reads the attribute <var>attributeId</var> and returns its first <var>length</var> bytes.
+     * The read itself always uses a buffer large enough for the whole attribute, as some callers
+     * only ask for the first element of an array attribute.
+     */
     public byte[] readAttributeAsByteArray(long attributeId, long dataTypeId, int length)
     {
-        final byte[] data = new byte[length];
-        H5Aread(attributeId, dataTypeId, data);
-        return data;
+        final long spaceId = H5Aget_space(attributeId);
+        final long requiredLength;
+        try
+        {
+            requiredLength = H5Sget_simple_extent_npoints(spaceId) * H5Tget_size(dataTypeId);
+        } finally
+        {
+            H5Sclose(spaceId);
+        }
+        final byte[] data = new byte[(int) Math.max(length, requiredLength)];
+        HDFHelper.H5Aread(attributeId, dataTypeId, data);
+        return (data.length == length) ? data : Arrays.copyOf(data, length);
     }
 
     public short[] readAttributeAsShortArray(long attributeId, long dataTypeId, int length)
@@ -1401,7 +1407,7 @@ class HDF5
 
     public void writeAttribute(long attributeId, long dataTypeId, byte[] value)
     {
-        H5Awrite(attributeId, dataTypeId, value);
+        HDFHelper.H5Awrite(attributeId, dataTypeId, value);
     }
 
     public void writeAttribute(long attributeId, long dataTypeId, short[] value)
@@ -1789,10 +1795,9 @@ class HDF5
     public long openDataType(long fileId, String name, ICleanUpRegistry registry)
     {
         checkMaxLength(name);
-        H5O_token_t token = new H5O_token_t();
-        H5Otoken_from_str(fileId, name.substring(1), token);
-        final long dataTypeId = isReference(name) ? H5Oopen_by_token(fileId, token)
-                : H5Topen(fileId, name, H5P_DEFAULT);
+        final long dataTypeId =
+                isReference(name) ? HDFHelper.H5Oopen_by_token_str(fileId, name.substring(1))
+                        : H5Topen(fileId, name, H5P_DEFAULT);
         registry.registerCleanUp(new Runnable()
             {
                 @Override
@@ -1839,6 +1844,11 @@ class HDF5
 
     public String tryGetOpaqueTag(long dataTypeId)
     {
+        // Newer HDF5 versions fail on H5Tget_tag for non-opaque types instead of returning null.
+        if (H5Tget_class(dataTypeId) != H5T_OPAQUE)
+        {
+            return null;
+        }
         return H5Tget_tag(dataTypeId);
     }
 

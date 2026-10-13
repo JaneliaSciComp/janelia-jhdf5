@@ -16,6 +16,7 @@
 
 package ch.systemsx.cisd.hdf5;
 
+import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary.intConstant;
 import hdf.hdf5lib.HDF5Constants;
 
 /**
@@ -71,22 +72,22 @@ public interface IHDF5WriterConfigurator extends IHDF5ReaderConfigurator
         /**
          * The library will create objects with the earliest possible format versions.
          */
-        EARLIEST(HDF5Constants.H5F_LIBVER_EARLIEST, false),
+        EARLIEST(intConstant(() -> HDF5Constants.H5F_LIBVER_EARLIEST), false),
 
         /**
          * The library will allow objects to be created with the latest format versions available to the current library release version.
          */
-        LATEST(HDF5Constants.H5F_LIBVER_LATEST, true),
+        LATEST(intConstant(() -> HDF5Constants.H5F_LIBVER_LATEST), true),
 
         /**
          * The library will allow objects to be created with the latest format versions available to HDF5 v1.8.
          */
-        V1_8(HDF5Constants.H5F_LIBVER_V18, false),
+        V1_8(intConstant(() -> HDF5Constants.H5F_LIBVER_V18), false),
 
         /**
          * The library will allow objects to be created with the latest format versions available to HDF5 v1.10.
          */
-        V1_10(HDF5Constants.H5F_LIBVER_V110, true);
+        V1_10(intConstant(() -> HDF5Constants.H5F_LIBVER_V110), true);
 
         private final int hdf5Constant;
         
