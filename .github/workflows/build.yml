@@ -35,3 +35,67 @@ jobs:
             target/surefire-reports/
             hs_err_pid*.log
           if-no-files-found: ignore
+
+  # Downstream check: build this commit, then run n5-hdf5's test suite against it. n5-hdf5
+  # is the first consumer of janelia-jhdf5 and exercises the public API end to end, including
+  # loading the native library from library code (PRs #13/#14), which this project's own tests
+  # can't see because they run inside the same JVM that built it.
+  downstream-n5-hdf5:
+    name: n5-hdf5 / ${{ matrix.os }} / Java ${{ matrix.java }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        java: ['8', '21']
+        include:
+          # Limit hdf5-platform to this runner's natives instead of downloading all of them.
+          - os: ubuntu-latest
+            platform: linux-x86_64
+          - os: macos-latest
+            platform: macosx-arm64
+          - os: windows-latest
+            platform: windows-x86_64
+    env:
+      # The n5-hdf5 branch that depends on janelia-jhdf5 (saalfeldlab/n5-hdf5#50). Switch to
+      # master once that is merged.
+      N5_HDF5_REPOSITORY: saalfeldlab/n5-hdf5
+      N5_HDF5_REF: janelia-jhdf5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: janelia-jhdf5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - name: Install janelia-jhdf5
+        working-directory: janelia-jhdf5
+        run: mvn -B -U install -DskipTests -Djacoco.skip=true -Djavacpp.platform=${{ matrix.platform }}
+      - name: Read janelia-jhdf5's version
+        id: version
+        shell: bash
+        working-directory: janelia-jhdf5
+        run: echo "version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)" >> "$GITHUB_OUTPUT"
+      - name: Check out n5-hdf5
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.N5_HDF5_REPOSITORY }}
+          ref: ${{ env.N5_HDF5_REF }}
+          path: n5-hdf5
+      - name: Test n5-hdf5 against this build
+        working-directory: n5-hdf5
+        # -Djanelia-jhdf5.version: test the version built above, whatever n5-hdf5's pom pins.
+        # -Denforcer.skip: pom-scijava's enforcer rejects SNAPSHOT dependencies, and this
+        # build is one until janelia-jhdf5 and the org.bytedeco:hdf5 preset are released.
+        run: mvn -B test -Djanelia-jhdf5.version=${{ steps.version.outputs.version }} -Djavacpp.platform=${{ matrix.platform }} -Denforcer.skip=true
+      - name: Upload n5-hdf5 test reports and crash logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: n5-hdf5-test-reports-${{ matrix.os }}-java${{ matrix.java }}
+          path: |
+            n5-hdf5/target/surefire-reports/
+            n5-hdf5/hs_err_pid*.log
+          if-no-files-found: ignore
