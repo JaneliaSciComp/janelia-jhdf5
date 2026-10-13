@@ -259,6 +259,10 @@ public final class Unix
      */
     public static Stat getFileInfo(String fileName) throws IOExceptionUnchecked
     {
+        if (fileName == null)
+        {
+            throw new NullPointerException("fileName");
+        }
         try
         {
             return new Stat(posix.stat(fileName));
@@ -290,6 +294,10 @@ public final class Unix
     public static Stat getLinkInfo(String linkName, boolean readSymbolicLinkTarget)
             throws IOExceptionUnchecked
     {
+        if (linkName == null)
+        {
+            throw new NullPointerException("linkName");
+        }
         final Stat stat;
         try
         {
@@ -349,6 +357,14 @@ public final class Unix
     public static void createSymbolicLink(String fileName, String linkName)
             throws IOExceptionUnchecked
     {
+        if (fileName == null)
+        {
+            throw new NullPointerException("fileName");
+        }
+        if (linkName == null)
+        {
+            throw new NullPointerException("linkName");
+        }
         final int result = posix.symlink(fileName, linkName);
         if (result < 0)
         {
@@ -362,6 +378,10 @@ public final class Unix
      */
     public static void setAccessMode(String fileName, short mode) throws IOExceptionUnchecked
     {
+        if (fileName == null)
+        {
+            throw new NullPointerException("fileName");
+        }
         final int result = posix.chmod(fileName, mode);
         if (result < 0)
         {
@@ -376,6 +396,10 @@ public final class Unix
      */
     public static void setLinkOwner(String linkName, int uid, int gid) throws IOExceptionUnchecked
     {
+        if (linkName == null)
+        {
+            throw new NullPointerException("linkName");
+        }
         final int result = posix.lchown(linkName, uid, gid);
         if (result < 0)
         {
@@ -394,6 +418,10 @@ public final class Unix
     public static void setLinkTimestamps(String fileName, long accessTimeSecs,
             long modificationTimeSecs) throws IOExceptionUnchecked
     {
+        if (fileName == null)
+        {
+            throw new NullPointerException("fileName");
+        }
         final int result =
                 posix.lutimes(fileName, new long[] { accessTimeSecs, 0 }, new long[] {
                         modificationTimeSecs, 0 });
