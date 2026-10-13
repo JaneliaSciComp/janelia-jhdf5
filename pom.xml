@@ -194,4 +194,62 @@
 		</repository>
 	</repositories>
 
+	<profiles>
+		<!-- JMH benchmarks under src/benchmark/java; not part of the normal build or test run.
+		       mvn -Pbenchmarks test-compile exec:exec                                 (all of them)
+		       mvn -Pbenchmarks test-compile exec:exec -Dbenchmarks.args="ChunkIter -p size=256"
+		     benchmarks.args are JMH's own arguments (-Dbenchmarks.args=-h lists them). -->
+		<profile>
+			<id>benchmarks</id>
+			<properties>
+				<benchmarks.args>.*</benchmarks.args>
+			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>org.openjdk.jmh</groupId>
+					<artifactId>jmh-core</artifactId>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.openjdk.jmh</groupId>
+					<artifactId>jmh-generator-annprocess</artifactId>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>add-benchmark-sources</id>
+								<phase>generate-test-sources</phase>
+								<goals>
+									<goal>add-test-source</goal>
+								</goals>
+								<configuration>
+									<sources>
+										<source>src/benchmark/java</source>
+									</sources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.5.0</version>
+						<configuration>
+							<!-- A separate java process, so that JMH can fork its own JVMs from it. -->
+							<executable>java</executable>
+							<classpathScope>test</classpathScope>
+							<commandlineArgs>-classpath %classpath org.openjdk.jmh.Main ${benchmarks.args}</commandlineArgs>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 </project>
