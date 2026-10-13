@@ -109,13 +109,29 @@ JVM with the class's default warm-up and iterations. Times are averages per oper
 ### What they show
 
 - **`H5Dchunk_iter` scales linearly, the indexed routes quadratically**, as in the Julia
-  measurements. Per chunk, `H5Dchunk_iter` costs about 0.45 µs including the JavaCPP callback
-  into Java, independent of the chunk count. `H5Dget_chunk_info` by index walks the chunk index
-  from the start for every call, so a full enumeration grows with the square of the chunk count:
-  at 16,384 chunks it is 788× slower with the v1 B-tree index and 461× slower with the fixed
-  array. `H5Dget_chunk_info_by_coord` is about 2.5× faster than by index but has the same shape.
+  measurements. Per chunk, `H5Dchunk_iter` costs about 0.45 µs from Java, independent of the
+  chunk count and of the chunk index. `H5Dget_chunk_info` by index walks the chunk index from
+  the start for every call, so a full enumeration grows with the square of the chunk count: at
+  16,384 chunks it is 788× slower with the v1 B-tree index and 461× slower with the fixed array.
+  `H5Dget_chunk_info_by_coord` is about 2.5× faster than by index but has the same shape.
   Anything that needs every chunk's address (kerchunk-style offset tables, archive manifests,
   chunk-level integrity checks) should use `H5Dchunk_iter`.
+- **Of those 0.45 µs per chunk, about 0.43 µs is the JNI upcall.** `c/chunk_iter_baseline.c`
+  runs the same enumerations in C against the same `libhdf5`:
+
+  | | C, no-op callback | C, by index | Java callback | Java, by index |
+  |---|---|---|---|---|
+  | 1,024 chunks, v1 B-tree | 0.037 ms | 28.6 ms | 0.463 ms | 28.1 ms |
+  | 16,384 chunks, v1 B-tree | 0.36 ms | 5,928 ms | 7.47 ms | 5,894 ms |
+  | 16,384 chunks, fixed array | 0.29 ms | 3,408 ms | 7.36 ms | 3,409 ms |
+
+  HDF5 itself visits a chunk in 0.02 µs; the JavaCPP callback (a JNI call back into the JVM per
+  chunk) adds 0.43 µs, and an empty Java callback costs the same as one that records the chunk,
+  so the body is free. The by-index times are the same from C and from Java: that route is bound
+  by HDF5, not by the binding. So `H5Dchunk_iter` from Java is 20× slower than from C, yet still
+  800× faster than the indexed alternative at 16,384 chunks. Collecting the chunk records in
+  native code and crossing into Java once would remove most of the remaining cost; that would be
+  a helper in the preset rather than in this project.
 - **The pure-Java `NativeData` is faster than the native code it replaced the need for.** It
   matches `ByteBuffer` within noise and is 4–7× faster than HDF5's own JNI converters in
   `HDFNativeData`, for 1 K and 1 M values alike. Byte swapping costs at most 25% on small arrays
