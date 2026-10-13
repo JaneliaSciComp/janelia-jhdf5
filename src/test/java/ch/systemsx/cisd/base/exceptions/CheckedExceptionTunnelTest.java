@@ -58,7 +58,7 @@ public class CheckedExceptionTunnelTest
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         re.printStackTrace(pw);
-        final String[] lines = StringUtils.split(sw.toString(), '\n');
+        final String[] lines = StringUtils.split(sw.toString(), "\r\n");
         assertEquals("java.lang.InterruptedException: Somehow got interrupted", lines[0]);
         assertTrue(
                 lines[1],
@@ -76,7 +76,7 @@ public class CheckedExceptionTunnelTest
         PrintWriter pw = new PrintWriter(sw);
         re.printFullStackTrace();
         re.printFullStackTrace(pw);
-        final String[] lines = StringUtils.split(sw.toString(), '\n');
+        final String[] lines = StringUtils.split(sw.toString(), "\r\n");
         assertEquals(
                 "ch.systemsx.cisd.base.exceptions.CheckedExceptionTunnel: Some exceptional condition",
                 lines[0]);

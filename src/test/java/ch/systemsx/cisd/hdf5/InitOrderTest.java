@@ -50,6 +50,10 @@ public class InitOrderTest
         final boolean windows = System.getProperty("os.name", "").startsWith("Windows");
         command.add(new File(new File(System.getProperty("java.home"), "bin"),
                 windows ? "java.exe" : "java").getPath());
+        // A cache of its own: on Windows the child can't overwrite a DLL in the shared JavaCPP
+        // cache while this JVM has it loaded. Children run one after another and share it.
+        command.add("-Dorg.bytedeco.javacpp.cachedir="
+                + new File("target", "init-order-javacpp-cache").getAbsolutePath());
         command.add("-cp");
         // Under Surefire this is its booter jar, whose manifest Class-Path holds the real class
         // path, so the child JVM sees the same classes as this one.
