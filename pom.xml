@@ -11,15 +11,15 @@
 	<artifactId>janelia-jhdf5</artifactId>
 	<version>22.03.01-SNAPSHOT</version>
 	<name>JHDF5</name>
-	<description>SciJava JHDF5 from Janelia</description>
-	<url>https://mycompany.com/imagej/gauss-filtering/</url>                   <!-- FIXME: Your project website here -->
-	<inceptionYear>2023</inceptionYear>                                        <!-- FIXME: Your project starting year here -->
+	<description>JHDF5, the high-level Java API for HDF5 from ETH Zürich SIS, on HDF5 2.x with native libraries from org.bytedeco:hdf5.</description>
+	<url>https://github.com/JaneliaSciComp/janelia-jhdf5</url>
+	<inceptionYear>2023</inceptionYear>
 	<organization>
-		<name>Howard Hughes Medical Institute</name>           <!-- FIXME: Your organization name here -->
-		<url>https://www.janelia.org/</url> <!-- FIXME: Your organization website here -->
+		<name>Howard Hughes Medical Institute</name>
+		<url>https://www.janelia.org/</url>
 	</organization>
 	<licenses>
-		<license>                         <!-- FIXME: Your license here -->
+		<license>
 			<name>BSD-3-Clause</name>
 			<url>https://www.janelia.org/open-science/software-licensing</url>
 			<distribution>repo</distribution>
@@ -44,8 +44,13 @@
 		</developer>
 	</developers>
 	<contributors>
+		<!-- Original author of JHDF5 and cisd:base at ETH Zürich CISD/SIS. -->
 		<contributor>
-			<name>None</name>
+			<name>Bernd Rinn</name>
+			<organization>ETH Zürich, Scientific IT Services</organization>
+			<roles>
+				<role>founder</role>
+			</roles>
 		</contributor>
 	</contributors>
 
