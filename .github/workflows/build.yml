@@ -72,12 +72,14 @@ jobs:
           cache: maven
       - name: Install janelia-jhdf5
         working-directory: janelia-jhdf5
+        # bash, not the Windows default PowerShell, which splits -Dfoo.bar=baz at the dot.
+        shell: bash
         run: mvn -B -U install -DskipTests -Djacoco.skip=true -Djavacpp.platform=${{ matrix.platform }}
       - name: Read janelia-jhdf5's version
         id: version
         shell: bash
         working-directory: janelia-jhdf5
-        run: echo "version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout | tr -d '\r')" >> "$GITHUB_OUTPUT"
       - name: Check out n5-hdf5
         uses: actions/checkout@v4
         with:
@@ -86,6 +88,7 @@ jobs:
           path: n5-hdf5
       - name: Test n5-hdf5 against this build
         working-directory: n5-hdf5
+        shell: bash
         # -Djanelia-jhdf5.version: test the version built above, whatever n5-hdf5's pom pins.
         # -Denforcer.skip: pom-scijava's enforcer rejects SNAPSHOT dependencies, and this
         # build is one until janelia-jhdf5 and the org.bytedeco:hdf5 preset are released.
