@@ -9,7 +9,7 @@
 		<version>34.1.0</version>
 	</parent>
 	<artifactId>janelia-jhdf5</artifactId>
-	<version>22.03.01-SNAPSHOT</version>
+	<version>26.10.0-SNAPSHOT</version>
 	<name>JHDF5</name>
 	<description>JHDF5, the high-level Java API for HDF5 from ETH Zürich SIS, on HDF5 2.x with native libraries from org.bytedeco:hdf5.</description>
 	<url>https://github.com/JaneliaSciComp/janelia-jhdf5</url>

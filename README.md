@@ -27,9 +27,11 @@ Because the `cisd:base` classes keep their package names, code written against `
 <dependency>
   <groupId>org.scijava</groupId>
   <artifactId>janelia-jhdf5</artifactId>
-  <version>22.03.01-SNAPSHOT</version>
+  <version>26.10.0-SNAPSHOT</version>
 </dependency>
 ```
+
+Versions follow upstream JHDF5's `YY.MM.patch` scheme (its last release was `19.04.1`), so `26.10.0` is the October 2026 release, the first on HDF5 2.x.
 
 Until a release, the artifact is a SNAPSHOT that depends on the `org.bytedeco:hdf5` snapshot from [Central's snapshot repository](https://central.sonatype.com/repository/maven-snapshots/); the pom declares that repository. The native HDF5 library is loaded for you the first time a `ch.systemsx.cisd.hdf5` class is used.
 
