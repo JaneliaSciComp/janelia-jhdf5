@@ -1,4 +1,4 @@
-package org.scijava.janelia.jhdf5;
+package org.janelia.jhdf5;
 
 import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;

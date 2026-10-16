@@ -1,4 +1,4 @@
-package org.scijava.janelia.jhdf5.benchmark;
+package org.janelia.jhdf5.benchmark;
 
 import java.util.concurrent.TimeUnit;
 

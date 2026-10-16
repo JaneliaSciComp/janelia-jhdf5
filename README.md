@@ -14,7 +14,7 @@ Maintained by [Mark Kittisopikul](https://www.janelia.org/people/mark-kittisopik
 
 | Before | Now |
 |---|---|
-| `cisd:jhdf5` 19.04.1 | `org.scijava:janelia-jhdf5` |
+| `cisd:jhdf5` 19.04.1 | `org.janelia:janelia-jhdf5` |
 | `cisd:base` (utility classes, native `libnativedata` and `libunix`) | Vendored into this artifact under the same package names (`ch.systemsx.cisd.base.*`), with the native parts rewritten in Java and [jnr-posix](https://github.com/jnr/jnr-posix) |
 | HDF5 1.10 native libraries bundled by ETH for a few platforms | HDF5 2.2.0 from [`org.bytedeco:hdf5`](https://github.com/bytedeco/javacpp-presets/tree/master/hdf5), via `hdf5-platform` for Linux, macOS and Windows on x86-64 and arm64 |
 | JHDF5's own JNI helper library (`libjhdf5`) | Pure Java on top of the bytedeco bindings (`HDFHelper`) |
@@ -25,7 +25,7 @@ Because the `cisd:base` classes keep their package names, code written against `
 
 ```xml
 <dependency>
-  <groupId>org.scijava</groupId>
+  <groupId>org.janelia</groupId>
   <artifactId>janelia-jhdf5</artifactId>
   <version>26.10.0-SNAPSHOT</version>
 </dependency>
