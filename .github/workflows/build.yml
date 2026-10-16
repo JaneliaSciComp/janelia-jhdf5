@@ -57,10 +57,11 @@ jobs:
           - os: windows-latest
             platform: windows-x86_64
     env:
-      # The n5-hdf5 branch that depends on janelia-jhdf5 (saalfeldlab/n5-hdf5#50). Switch to
-      # master once that is merged.
-      N5_HDF5_REPOSITORY: saalfeldlab/n5-hdf5
-      N5_HDF5_REF: janelia-jhdf5
+      # The n5-hdf5 branch that depends on janelia-jhdf5 (saalfeldlab/n5-hdf5#50) under the
+      # org.janelia groupId (saalfeldlab/n5-hdf5#51). Switch back to saalfeldlab/n5-hdf5 and
+      # janelia-jhdf5, then master, as those are merged.
+      N5_HDF5_REPOSITORY: mkitti/n5-hdf5
+      N5_HDF5_REF: janelia-jhdf5-groupid
     steps:
       - uses: actions/checkout@v4
         with:
