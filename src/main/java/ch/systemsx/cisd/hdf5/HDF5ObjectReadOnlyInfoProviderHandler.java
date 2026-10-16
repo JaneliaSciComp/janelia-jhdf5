@@ -339,6 +339,15 @@ class HDF5ObjectReadOnlyInfoProviderHandler implements IHDF5ObjectReadOnlyInfoPr
     }
 
     @Override
+    public HDF5ChunkIndex getChunkIndex(final String objectPath)
+    {
+        assert objectPath != null;
+
+        baseReader.checkOpen();
+        return baseReader.getChunkIndex(objectPath);
+    }
+
+    @Override
     public long getSize(final String objectPath)
     {
         return getDataSetInformation(objectPath, DataTypeInfoOptions.MINIMAL).getSize();

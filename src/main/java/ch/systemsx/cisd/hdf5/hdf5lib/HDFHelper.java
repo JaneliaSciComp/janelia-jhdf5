@@ -731,7 +731,7 @@ public class HDFHelper
      * current HDF5 error stack. Must be called while still holding the <code>H5.class</code>
      * lock, before any other HDF5 call can replace that error stack.
      */
-    static HDF5LibraryException libraryException(String functionName)
+    public static HDF5LibraryException libraryException(String functionName)
     {
         final HDF5LibraryException probe = new HDF5LibraryException(functionName);
         final long major = probe.getMajorErrorNumber();

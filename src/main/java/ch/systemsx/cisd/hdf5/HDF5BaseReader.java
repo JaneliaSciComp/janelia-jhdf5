@@ -1153,6 +1153,28 @@ class HDF5BaseReader
         return runner.call(informationDeterminationRunnable);
     }
 
+    HDF5ChunkIndex getChunkIndex(final String dataSetPath)
+    {
+        assert dataSetPath != null;
+
+        final ICallableWithCleanUp<HDF5ChunkIndex> runnable =
+                new ICallableWithCleanUp<HDF5ChunkIndex>()
+                    {
+                        @Override
+                        public HDF5ChunkIndex call(ICleanUpRegistry registry)
+                        {
+                            final long dataSetId = h5.openDataSet(fileId, dataSetPath, registry);
+                            if (h5.getLayout(dataSetId, registry) != HDF5StorageLayout.CHUNKED)
+                            {
+                                throw new HDF5JavaException("Data set '" + dataSetPath
+                                        + "' is not chunked, it has no chunk index.");
+                            }
+                            return h5.getChunkIndex(dataSetId, h5.getRank(dataSetId, false, registry));
+                        }
+                    };
+        return runner.call(runnable);
+    }
+
     HDF5DataTypeVariant tryGetTypeVariant(final String objectPath)
     {
         assert objectPath != null;
