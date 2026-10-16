@@ -130,6 +130,11 @@ class HDF5
 
     }
 
+    long getDataTransferPropertyListId()
+    {
+        return numericConversionXferPropertyListID;
+    }
+
     private static void checkMaxLength(String path) throws HDF5JavaException
     {
         if (path.length() > MAX_PATH_LENGTH)
