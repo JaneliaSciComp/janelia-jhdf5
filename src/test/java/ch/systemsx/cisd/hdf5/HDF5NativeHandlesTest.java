@@ -1,6 +1,7 @@
 package ch.systemsx.cisd.hdf5;
 
 import static org.testng.AssertJUnit.assertArrayEquals;
+import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 import static org.testng.AssertJUnit.fail;
 
@@ -72,6 +73,60 @@ public class HDF5NativeHandlesTest
         } catch (HDF5JavaException e)
         {
             // expected
+        }
+        try
+        {
+            w.getDataSetCreationPropertyListId();
+            fail();
+        } catch (HDF5JavaException e)
+        {
+            // expected
+        }
+        try
+        {
+            w.getCompactDataSetCreationPropertyListId();
+            fail();
+        } catch (HDF5JavaException e)
+        {
+            // expected
+        }
+        try
+        {
+            w.getLinkCreationPropertyListId();
+            fail();
+        } catch (HDF5JavaException e)
+        {
+            // expected
+        }
+    }
+
+    @Test
+    public void testRawCreateWithExposedCreationPropertyLists() throws IOException
+    {
+        final File file = File.createTempFile("native-handles", ".h5");
+        file.deleteOnExit();
+        try (IHDF5Writer w = HDF5Factory.open(file))
+        {
+            final long fileId = w.getFileId();
+            final long lcpl = w.getLinkCreationPropertyListId();
+            final long space = H5.H5Screate_simple(1, new long[] { 3 }, null);
+            // Intermediate groups /a/b are created thanks to the link creation list.
+            final long d1 = H5.H5Dcreate(fileId, "/a/b/contiguous", HDF5Constants.H5T_NATIVE_INT32,
+                    space, lcpl, w.getDataSetCreationPropertyListId(), HDF5Constants.H5P_DEFAULT);
+            H5.H5Dclose(d1);
+            final long d2 = H5.H5Dcreate(fileId, "/a/b/compact", HDF5Constants.H5T_NATIVE_INT32,
+                    space, lcpl, w.getCompactDataSetCreationPropertyListId(),
+                    HDF5Constants.H5P_DEFAULT);
+            H5.H5Dwrite(d2, HDF5Constants.H5T_NATIVE_INT32, HDF5Constants.H5S_ALL,
+                    HDF5Constants.H5S_ALL, w.getDataTransferPropertyListId(), new int[] { 1, 2, 3 });
+            H5.H5Dclose(d2);
+            H5.H5Sclose(space);
+            assertTrue(w.isGroup("/a/b"));
+            assertEquals(HDF5StorageLayout.CONTIGUOUS,
+                    w.getDataSetInformation("/a/b/contiguous").getStorageLayout());
+            assertEquals(HDF5StorageLayout.COMPACT,
+                    w.getDataSetInformation("/a/b/compact").getStorageLayout());
+            assertArrayEquals(new int[] { 1, 2, 3 }, w.int32().readArray("/a/b/compact"));
         }
     }
 }

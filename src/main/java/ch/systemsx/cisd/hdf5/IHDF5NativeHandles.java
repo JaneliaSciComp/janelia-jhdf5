@@ -22,6 +22,10 @@ package ch.systemsx.cisd.hdf5;
  * <p>
  * All handles are owned by the reader. Do not close them, and do not use them after the reader has
  * been closed; close any objects opened with them first.
+ * <p>
+ * The property lists are shared with the reader, so treat them as read-only: to customize one (for
+ * example to set a chunk layout or a filter), make a copy with {@link hdf.hdf5lib.H5#H5Pcopy(long)}
+ * and close the copy yourself.
  */
 public interface IHDF5NativeHandles
 {
@@ -40,4 +44,29 @@ public interface IHDF5NativeHandles
      * @throws ch.systemsx.cisd.hdf5.exceptions.HDF5JavaException if the reader has been closed.
      */
     public long getDataTransferPropertyListId();
+
+    /**
+     * Returns the id of the data set creation property list that JHDF5 uses for contiguous data
+     * sets: default layout, fill time set to allocation time.
+     * 
+     * @throws ch.systemsx.cisd.hdf5.exceptions.HDF5JavaException if the reader has been closed.
+     */
+    public long getDataSetCreationPropertyListId();
+
+    /**
+     * Returns the id of the data set creation property list that JHDF5 uses for compact data sets:
+     * compact layout, fill time set to allocation time.
+     * 
+     * @throws ch.systemsx.cisd.hdf5.exceptions.HDF5JavaException if the reader has been closed.
+     */
+    public long getCompactDataSetCreationPropertyListId();
+
+    /**
+     * Returns the id of the link creation property list that JHDF5 uses when creating groups, data
+     * sets and links: intermediate groups are created as needed, and names are UTF-8 encoded if the
+     * file was opened with UTF-8 character encoding.
+     * 
+     * @throws ch.systemsx.cisd.hdf5.exceptions.HDF5JavaException if the reader has been closed.
+     */
+    public long getLinkCreationPropertyListId();
 }

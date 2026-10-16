@@ -134,6 +134,27 @@ class HDF5Reader implements IHDF5Reader
         return baseReader.h5.getDataTransferPropertyListId();
     }
 
+    @Override
+    public long getDataSetCreationPropertyListId()
+    {
+        baseReader.checkOpen();
+        return baseReader.h5.getDataSetCreationPropertyListId();
+    }
+
+    @Override
+    public long getCompactDataSetCreationPropertyListId()
+    {
+        baseReader.checkOpen();
+        return baseReader.h5.getCompactDataSetCreationPropertyListId();
+    }
+
+    @Override
+    public long getLinkCreationPropertyListId()
+    {
+        baseReader.checkOpen();
+        return baseReader.h5.getLinkCreationPropertyListId();
+    }
+
     // /////////////////////
     // File
     // /////////////////////
