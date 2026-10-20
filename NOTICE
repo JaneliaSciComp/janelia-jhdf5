@@ -12,9 +12,10 @@ Scientific IT Services (SIS):
   Copyright 2007 - 2018 ETH Zuerich, CISD and SIS
 
 Both are licensed under the Apache License, Version 2.0 (see LICENSE).
-Their files keep their original copyright notices. The modifications made
-in this repository are recorded in its version control history at
-https://github.com/JaneliaSciComp/janelia-jhdf5.
+Their files keep their original copyright notices. The files changed in
+this repository say so in their headers ("Modified in <year> by the Howard
+Hughes Medical Institute"); the changes themselves are recorded in its
+version control history at https://github.com/JaneliaSciComp/janelia-jhdf5.
 
 This product includes software derived from the NCSA Hierarchical Data
 Format (HDF) Java Software Library, developed by the National Center for

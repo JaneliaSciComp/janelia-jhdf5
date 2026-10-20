@@ -61,7 +61,7 @@ The test suite is JHDF5's own (imported from `sourceTest/`), `cisd:base`'s tests
 
 ## License
 
-janelia-jhdf5 is licensed under the [Apache License, Version 2.0](LICENSE), the same license as the JHDF5 and `cisd:base` code it is based on. New code and modifications are © Howard Hughes Medical Institute; the code inherited from JHDF5 and `cisd:base` is © ETH Zürich, CISD and SIS, and keeps its original license headers. [NOTICE](NOTICE) lists the copyright notices that redistributions must carry, as section 4 of the license requires.
+janelia-jhdf5 is licensed under the [Apache License, Version 2.0](LICENSE), the same license as the JHDF5 and `cisd:base` code it is based on. New code and modifications are © Howard Hughes Medical Institute; the code inherited from JHDF5 and `cisd:base` is © ETH Zürich, CISD and SIS, and keeps its original license headers; the files changed here say so in their headers. [NOTICE](NOTICE) lists the copyright notices that redistributions must carry, as section 4 of the license requires.
 
 One file is under a different license: `ch.systemsx.cisd.base.convert.NativeData` is derived from NCSA's HDF Java library and is distributed under the NCSA HDF license in [licenses/COPYING_HDF](licenses/COPYING_HDF), as it was in `cisd:base`. The jar carries `LICENSE`, `NOTICE` and `licenses/COPYING_HDF` in `META-INF`.
 
