@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>34.1.0</version>
+		<version>44.0.0</version>
 	</parent>
 	<groupId>org.janelia</groupId>
 	<artifactId>janelia-jhdf5</artifactId>
@@ -168,6 +168,8 @@
 
 
 	<properties>
+		<scijava.jvm.version>8</scijava.jvm.version>
+		<scijava.jvm.build.version>[1.8.0-101,)</scijava.jvm.build.version>
 		<package-name>org.janelia.jhdf5</package-name>
 		<main-class>org.janelia.jhdf5.Demo</main-class>
 		<license.licenseName>BSD-3-Clause</license.licenseName>
