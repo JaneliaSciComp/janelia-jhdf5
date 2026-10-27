@@ -120,6 +120,27 @@ final class HDF5Writer extends HDF5Reader implements IHDF5Writer
         return baseWriter;
     }
 
+    @Override
+    public long getDataSetCreationPropertyListId()
+    {
+        baseWriter.checkOpen();
+        return baseWriter.h5.getDataSetCreationPropertyListId();
+    }
+
+    @Override
+    public long getCompactDataSetCreationPropertyListId()
+    {
+        baseWriter.checkOpen();
+        return baseWriter.h5.getCompactDataSetCreationPropertyListId();
+    }
+
+    @Override
+    public long getLinkCreationPropertyListId()
+    {
+        baseWriter.checkOpen();
+        return baseWriter.h5.getLinkCreationPropertyListId();
+    }
+
     // /////////////////////
     // File
     // /////////////////////
