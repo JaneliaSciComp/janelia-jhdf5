@@ -157,24 +157,31 @@ class HDF5
                         + ") for a chunk index.");
             }
             collector = new ChunkCollector(rank, (int) numberOfChunks[0]);
+            final int status;
             try
             {
-                if (hdf5.H5Dchunk_iter(dataSetId, H5P_DEFAULT, collector, null) < 0)
-                {
-                    throw HDFHelper.libraryException("H5Dchunk_iter");
-                }
+                status = hdf5.H5Dchunk_iter(dataSetId, H5P_DEFAULT, collector, null);
             } finally
             {
                 collector.close();
+            }
+            // An exception in the callback must not be lost: JavaCPP would swallow it and carry on.
+            collector.rethrowFailure();
+            if (status < 0)
+            {
+                throw HDFHelper.libraryException("H5Dchunk_iter");
             }
         }
         return collector.toChunkIndex();
     }
 
     /** Collects what <code>H5Dchunk_iter</code> reports. */
-    private static final class ChunkCollector extends H5D_chunk_iter_op_t
+    static final class ChunkCollector extends H5D_chunk_iter_op_t
     {
         private final int rank;
+
+        /** What went wrong in {@link #call}, if anything; the iteration is stopped then. */
+        private Throwable failure;
 
         private long[] offsets;
 
@@ -199,6 +206,36 @@ class HDF5
         public int call(final LongPointer chunkOffset, final int chunkFilterMask,
                 final long chunkAddress, final long chunkBytes, final Pointer opData)
         {
+            try
+            {
+                add(chunkOffset, chunkFilterMask, chunkAddress, chunkBytes);
+                return hdf5.H5_ITER_CONT;
+            } catch (final Throwable t)
+            {
+                failure = t;
+                return hdf5.H5_ITER_STOP;
+            }
+        }
+
+        void rethrowFailure()
+        {
+            if (failure instanceof Error)
+            {
+                throw (Error) failure;
+            }
+            if (failure instanceof RuntimeException)
+            {
+                throw (RuntimeException) failure;
+            }
+            if (failure != null)
+            {
+                throw new HDF5JavaException("Collecting the chunk index failed: " + failure);
+            }
+        }
+
+        private void add(final LongPointer chunkOffset, final int chunkFilterMask,
+                final long chunkAddress, final long chunkBytes)
+        {
             if (count == sizes.length)
             {
                 // More chunks than H5Dget_num_chunks reported (the data set changed concurrently).
@@ -216,7 +253,6 @@ class HDF5
             addresses[count] = chunkAddress;
             sizes[count] = chunkBytes;
             ++count;
-            return hdf5.H5_ITER_CONT;
         }
 
         HDF5ChunkIndex toChunkIndex()
