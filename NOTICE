@@ -29,3 +29,8 @@ contributions from the Contributors listed in licenses/COPYING_HDF:
 
 That file is distributed under the terms in licenses/COPYING_HDF, not
 under the Apache License.
+
+licenses/COPYING_HDF is reproduced verbatim from cisd:base. Of the parts of that
+file, only the NCSA HDF license applies to code in this repository (NativeData.java);
+the sections on the glguerin MacBinary package and on code of the Lawrence Livermore
+National Laboratory (UC LLNL) concern code that is not part of this repository.

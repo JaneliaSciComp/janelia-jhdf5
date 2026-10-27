@@ -24,6 +24,12 @@
 			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
 			<distribution>repo</distribution>
 		</license>
+		<license>
+			<name>NCSA HDF license</name>
+			<url>https://github.com/JaneliaSciComp/janelia-jhdf5/blob/main/licenses/COPYING_HDF</url>
+			<distribution>repo</distribution>
+			<comments>Applies to ch/systemsx/cisd/base/convert/NativeData.java only (derived from NCSA's HDF Java library); text in licenses/COPYING_HDF. Everything else is under Apache-2.0.</comments>
+		</license>
 	</licenses>
 
 	<developers>
@@ -146,6 +152,8 @@
 
 	<build>
 		<resources>
+			<!-- Currently absent (harmless); kept so resources added there are still packaged,
+			     since declaring any <resources> replaces Maven's default of this directory. -->
 			<resource>
 				<directory>src/main/resources</directory>
 			</resource>
