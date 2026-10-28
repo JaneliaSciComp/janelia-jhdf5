@@ -1,3 +1,7 @@
+/*
+ * Modified in 2026 by the Howard Hughes Medical Institute for janelia-jhdf5.
+ */
+
 package ch.systemsx.cisd.hdf5;
 
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary.intConstant;

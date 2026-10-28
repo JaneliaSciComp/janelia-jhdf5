@@ -3,8 +3,7 @@
 [![Build](https://github.com/JaneliaSciComp/janelia-jhdf5/actions/workflows/build.yml/badge.svg)](https://github.com/JaneliaSciComp/janelia-jhdf5/actions/workflows/build.yml)
 [![HDF5 2.2.0](https://img.shields.io/badge/HDF5-2.2.0-blue)](https://github.com/bytedeco/javacpp-presets/tree/master/hdf5)
 [![Java 8+](https://img.shields.io/badge/Java-8%2B-blue)](pom.xml)
-[![License: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-green)](LICENSE)
-[![Original code: Apache-2.0](https://img.shields.io/badge/original%20code-Apache--2.0-green)](#license)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 A maintained fork of **JHDF5**, the high-level Java API for [HDF5](https://www.hdfgroup.org/solutions/hdf5/) written by Bernd Rinn at ETH Zürich's Scientific IT Services (SIS, formerly CISD). It keeps JHDF5's API (`ch.systemsx.cisd.hdf5.*`) and runs it on current HDF5 with native libraries for every major platform.
 
@@ -64,9 +63,11 @@ The test suite is JHDF5's own (imported from `sourceTest/`), `cisd:base`'s tests
 
 ## License
 
-New code and modifications in this repository are © Howard Hughes Medical Institute and licensed under the [BSD 3-Clause License](LICENSE).
+janelia-jhdf5 is licensed under the [Apache License, Version 2.0](LICENSE), the same license as the JHDF5 and `cisd:base` code it is based on. New code and modifications are © Howard Hughes Medical Institute; the code inherited from JHDF5 and `cisd:base` is © ETH Zürich, CISD and SIS, and keeps its original license headers; the files changed here say so in their headers. [NOTICE](NOTICE) lists the copyright notices that redistributions must carry, as section 4 of the license requires.
 
-The code inherited from JHDF5 and `cisd:base` is © ETH Zürich, CISD and SIS, and licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0); those files keep their original license headers. The HDF5 library and its Java bindings are © The HDF Group under the [HDF5 license](https://github.com/HDFGroup/hdf5/blob/develop/LICENSE); the JavaCPP presets are by Samuel Audet and contributors under Apache-2.0 or GPLv2 with Classpath exception.
+One file is under a different license: `ch.systemsx.cisd.base.convert.NativeData` is derived from NCSA's HDF Java library and is distributed under the NCSA HDF license in [licenses/COPYING_HDF](licenses/COPYING_HDF), as it was in `cisd:base`. The jar carries `LICENSE`, `NOTICE` and `licenses/COPYING_HDF` in `META-INF`.
+
+The dependencies keep their own licenses: the HDF5 library and its Java bindings are © The HDF Group under the [HDF5 license](https://github.com/HDFGroup/hdf5/blob/develop/LICENSE); the JavaCPP presets are by Samuel Audet and contributors under Apache-2.0 or GPLv2 with Classpath exception.
 
 ## Acknowledgements
 

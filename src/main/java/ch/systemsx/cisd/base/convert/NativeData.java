@@ -11,6 +11,15 @@
  *                                                                          *
  ****************************************************************************/
 
+/*
+ * License: this file is under the NCSA HDF license, not the Apache License that covers the rest
+ * of janelia-jhdf5. The "accompanying COPYING file" named above is licenses/COPYING_HDF in this
+ * repository; it is also in META-INF/licenses/COPYING_HDF of the janelia-jhdf5 jar and sources jar.
+ *
+ * Modified on 2026-10-05 by the Howard Hughes Medical Institute (janelia-jhdf5): reimplemented in
+ * pure Java on java.nio.ByteBuffer, without cisd:base's native library.
+ */
+
 package ch.systemsx.cisd.base.convert;
 
 import java.nio.ByteBuffer;

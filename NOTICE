@@ -1,0 +1,36 @@
+janelia-jhdf5
+Copyright 2023 - 2026 Howard Hughes Medical Institute
+
+This product is a fork of JHDF5 and includes software developed at
+ETH Zuerich, Center for Information Sciences and Databases (CISD) and
+Scientific IT Services (SIS):
+
+  JHDF5 (ch.systemsx.cisd.hdf5.*)
+  Copyright 2007 - 2018 ETH Zuerich, CISD and SIS
+
+  cisd:base (ch.systemsx.cisd.base.*)
+  Copyright 2007 - 2018 ETH Zuerich, CISD and SIS
+
+Both are licensed under the Apache License, Version 2.0 (see LICENSE).
+Their files keep their original copyright notices. The files changed in
+this repository say so in their headers ("Modified in <year> by the Howard
+Hughes Medical Institute"); the changes themselves are recorded in its
+version control history at https://github.com/JaneliaSciComp/janelia-jhdf5.
+
+This product includes software derived from the NCSA Hierarchical Data
+Format (HDF) Java Software Library, developed by the National Center for
+Supercomputing Applications at the University of Illinois, with
+contributions from the Contributors listed in licenses/COPYING_HDF:
+
+  ch/systemsx/cisd/base/convert/NativeData.java
+  Copyright 1988-2004, the Board of Trustees of the University of Illinois.
+  Copyright 2007-2009, Center for Information Sciences and Databases,
+  ETH Zurich, Switzerland.
+
+That file is distributed under the terms in licenses/COPYING_HDF, not
+under the Apache License.
+
+licenses/COPYING_HDF is reproduced verbatim from cisd:base. Of the parts of that
+file, only the NCSA HDF license applies to code in this repository (NativeData.java);
+the sections on the glguerin MacBinary package and on code of the Lawrence Livermore
+National Laboratory (UC LLNL) concern code that is not part of this repository.

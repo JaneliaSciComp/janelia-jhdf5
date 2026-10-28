@@ -21,9 +21,15 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>BSD-3-Clause</name>
-			<url>https://www.janelia.org/open-science/software-licensing</url>
+			<name>Apache-2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
 			<distribution>repo</distribution>
+		</license>
+		<license>
+			<name>NCSA HDF license</name>
+			<url>https://github.com/JaneliaSciComp/janelia-jhdf5/blob/main/licenses/COPYING_HDF</url>
+			<distribution>repo</distribution>
+			<comments>Applies to ch/systemsx/cisd/base/convert/NativeData.java only (derived from NCSA's HDF Java library); text in licenses/COPYING_HDF. Everything else is under Apache-2.0.</comments>
 		</license>
 	</licenses>
 
@@ -146,6 +152,24 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<!-- Currently absent (harmless); kept so resources added there are still packaged,
+			     since declaring any <resources> replaces Maven's default of this directory. -->
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+			<!-- The Apache License requires the license and the NOTICE to accompany binary
+			     distributions, and licenses/COPYING_HDF (for NativeData) requires its notice too. -->
+			<resource>
+				<directory>${project.basedir}</directory>
+				<targetPath>META-INF</targetPath>
+				<includes>
+					<include>LICENSE</include>
+					<include>NOTICE</include>
+					<include>licenses/**</include>
+				</includes>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -170,7 +194,7 @@
 	<properties>
 		<package-name>org.janelia.jhdf5</package-name>
 		<main-class>org.janelia.jhdf5.Demo</main-class>
-		<license.licenseName>BSD-3-Clause</license.licenseName>
+		<license.licenseName>apache_v2</license.licenseName>
 		<license.copyrightOwners>Howard Hughes Medical Institute</license.copyrightOwners>
 		<javacpp.version>1.5.15-SNAPSHOT</javacpp.version>
 		<!-- HDF5ArchiverTest's expected listings (and its .h5ar fixtures) were written in this time
