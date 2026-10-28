@@ -74,7 +74,7 @@ package ch.systemsx.cisd.hdf5;
  * 
  * @author Bernd Rinn
  */
-public interface IHDF5Reader extends IHDF5SimpleReader
+public interface IHDF5Reader extends IHDF5SimpleReader, IHDF5NativeHandles
 {
 
     // /////////////////////

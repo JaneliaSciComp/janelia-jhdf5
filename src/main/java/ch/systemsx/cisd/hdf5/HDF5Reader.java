@@ -120,9 +120,18 @@ class HDF5Reader implements IHDF5Reader
         baseReader.checkOpen();
     }
 
-    long getFileId()
+    @Override
+    public long getFileId()
     {
+        baseReader.checkOpen();
         return baseReader.fileId;
+    }
+
+    @Override
+    public long getDataTransferPropertyListId()
+    {
+        baseReader.checkOpen();
+        return baseReader.h5.getDataTransferPropertyListId();
     }
 
     // /////////////////////
