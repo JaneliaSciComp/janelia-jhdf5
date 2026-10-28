@@ -263,6 +263,26 @@ class HDF5
         }
     }
 
+    long getDataTransferPropertyListId()
+    {
+        return numericConversionXferPropertyListID;
+    }
+
+    long getDataSetCreationPropertyListId()
+    {
+        return dataSetCreationPropertyListFillTimeAlloc;
+    }
+
+    long getCompactDataSetCreationPropertyListId()
+    {
+        return dataSetCreationPropertyListCompactStorageLayoutFileTimeAlloc;
+    }
+
+    long getLinkCreationPropertyListId()
+    {
+        return lcplCreateIntermediateGroups;
+    }
+
     private static void checkMaxLength(String path) throws HDF5JavaException
     {
         if (path.length() > MAX_PATH_LENGTH)

@@ -1,4 +1,4 @@
-package org.scijava.janelia.jhdf5.benchmark;
+package org.janelia.jhdf5.benchmark;
 
 import static hdf.hdf5lib.HDF5Constants.H5F_ACC_TRUNC;
 import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
