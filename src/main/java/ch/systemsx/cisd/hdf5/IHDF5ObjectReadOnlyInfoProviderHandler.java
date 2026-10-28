@@ -265,6 +265,27 @@ public interface IHDF5ObjectReadOnlyInfoProviderHandler
             final DataTypeInfoOptions dataTypeInfoOptions);
 
     /**
+     * Returns the index of the allocated chunks of a chunked data set: for each chunk its offset,
+     * its address and size in the file, and its filter mask. Uses <code>H5Dchunk_iter</code>, which
+     * reads the whole chunk index in one pass, rather than with one library call per chunk.
+     * <p>
+     * Together with the file address and size of a chunk this allows reading the raw bytes of a
+     * chunk without going through the HDF5 library. They are the chunk as stored, so the caller has
+     * to reverse the data set's filters (see {@link HDF5ChunkIndex#getFilterMask(int)}). The offsets
+     * are in elements. The result is a snapshot: later writes can allocate, move or resize chunks,
+     * so only use the addresses while nothing writes to the file.
+     * <p>
+     * Chunks that have never been written are not listed, unless the data set was created with
+     * early space allocation.
+     * <p>
+     * It is a failure condition if the <var>objectPath</var> does not exist, does not identify a
+     * data set, or the data set is not {@link HDF5StorageLayout#CHUNKED}.
+     * 
+     * @param objectPath The name (including path information) of the data set.
+     */
+    public HDF5ChunkIndex getChunkIndex(final String objectPath);
+
+    /**
      * Returns the total size (in bytes) of <var>objectPath</var>. It is a failure condition if the
      * <var>objectPath</var> does not exist or does not identify a data set. This method follows
      * symbolic links.

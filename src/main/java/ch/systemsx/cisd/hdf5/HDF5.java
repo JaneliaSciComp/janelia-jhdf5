@@ -63,6 +63,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.bytedeco.hdf5.H5D_chunk_iter_op_t;
+import org.bytedeco.hdf5.global.hdf5;
+import org.bytedeco.javacpp.LongPointer;
+import org.bytedeco.javacpp.Pointer;
+
 import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;
 import hdf.hdf5lib.HDFNativeData;
@@ -128,6 +133,134 @@ class HDF5
         }
         this.lcplCreateIntermediateGroups = createLinkCreationPropertyList(true, fileRegistry);
 
+    }
+
+    /**
+     * Returns the index of the allocated chunks of the chunked data set <var>dataSetId</var>,
+     * using <code>H5Dchunk_iter</code> (which {@link hdf.hdf5lib.H5} does not have, so it goes
+     * through the JavaCPP binding).
+     */
+    HDF5ChunkIndex getChunkIndex(final long dataSetId, final int rank)
+    {
+        final long[] numberOfChunks = new long[1];
+        final ChunkCollector collector;
+        // JavaCPP calls do not take the lock that hdf.hdf5lib.H5's static methods do.
+        synchronized (H5.class)
+        {
+            if (hdf5.H5Dget_num_chunks(dataSetId, H5S_ALL, numberOfChunks) < 0)
+            {
+                throw HDFHelper.libraryException("H5Dget_num_chunks");
+            }
+            if (numberOfChunks[0] > Integer.MAX_VALUE / Math.max(rank, 1))
+            {
+                throw new HDF5JavaException("Data set has too many chunks (" + numberOfChunks[0]
+                        + ") for a chunk index.");
+            }
+            collector = new ChunkCollector(rank, (int) numberOfChunks[0]);
+            final int status;
+            try
+            {
+                status = hdf5.H5Dchunk_iter(dataSetId, H5P_DEFAULT, collector, null);
+            } finally
+            {
+                collector.close();
+            }
+            // An exception in the callback must not be lost: JavaCPP would swallow it and carry on.
+            collector.rethrowFailure();
+            if (status < 0)
+            {
+                throw HDFHelper.libraryException("H5Dchunk_iter");
+            }
+        }
+        return collector.toChunkIndex();
+    }
+
+    /** Collects what <code>H5Dchunk_iter</code> reports. */
+    static final class ChunkCollector extends H5D_chunk_iter_op_t
+    {
+        private final int rank;
+
+        /** What went wrong in {@link #call}, if anything; the iteration is stopped then. */
+        private Throwable failure;
+
+        private long[] offsets;
+
+        private int[] filterMasks;
+
+        private long[] addresses;
+
+        private long[] sizes;
+
+        private int count;
+
+        ChunkCollector(final int rank, final int expectedChunks)
+        {
+            this.rank = rank;
+            this.offsets = new long[expectedChunks * rank];
+            this.filterMasks = new int[expectedChunks];
+            this.addresses = new long[expectedChunks];
+            this.sizes = new long[expectedChunks];
+        }
+
+        @Override
+        public int call(final LongPointer chunkOffset, final int chunkFilterMask,
+                final long chunkAddress, final long chunkBytes, final Pointer opData)
+        {
+            try
+            {
+                add(chunkOffset, chunkFilterMask, chunkAddress, chunkBytes);
+                return hdf5.H5_ITER_CONT;
+            } catch (final Throwable t)
+            {
+                failure = t;
+                return hdf5.H5_ITER_STOP;
+            }
+        }
+
+        void rethrowFailure()
+        {
+            if (failure instanceof Error)
+            {
+                throw (Error) failure;
+            }
+            if (failure instanceof RuntimeException)
+            {
+                throw (RuntimeException) failure;
+            }
+            if (failure != null)
+            {
+                throw new HDF5JavaException("Collecting the chunk index failed: " + failure);
+            }
+        }
+
+        private void add(final LongPointer chunkOffset, final int chunkFilterMask,
+                final long chunkAddress, final long chunkBytes)
+        {
+            if (count == sizes.length)
+            {
+                // More chunks than H5Dget_num_chunks reported (the data set changed concurrently).
+                final int newLength = Math.max(16, count + (count >> 1));
+                offsets = Arrays.copyOf(offsets, newLength * rank);
+                filterMasks = Arrays.copyOf(filterMasks, newLength);
+                addresses = Arrays.copyOf(addresses, newLength);
+                sizes = Arrays.copyOf(sizes, newLength);
+            }
+            for (int d = 0; d < rank; ++d)
+            {
+                offsets[count * rank + d] = chunkOffset.get(d);
+            }
+            filterMasks[count] = chunkFilterMask;
+            addresses[count] = chunkAddress;
+            sizes[count] = chunkBytes;
+            ++count;
+        }
+
+        HDF5ChunkIndex toChunkIndex()
+        {
+            return new HDF5ChunkIndex(rank, Arrays.copyOf(offsets, count * rank),
+                    Arrays.copyOf(filterMasks, count), Arrays.copyOf(addresses, count),
+                    Arrays.copyOf(sizes, count));
+        }
     }
 
     long getDataTransferPropertyListId()
