@@ -18,6 +18,7 @@ package ch.systemsx.cisd.hdf5;
 
 import static hdf.hdf5lib.H5.*;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper.H5Pset_mdc_image_config;
+import ch.systemsx.cisd.hdf5.hdf5lib.HDF5NativeLibrary;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper.H5Pget_mdc_image_enabled;
 import static hdf.hdf5lib.HDF5Constants.H5_INDEX_NAME;
 import static hdf.hdf5lib.HDF5Constants.H5_ITER_NATIVE;
@@ -168,6 +169,8 @@ class HDF5
         {
             H5.H5close();
             H5.H5open();
+            // H5close() dropped the bundled filter plugins from HDF5's search path.
+            HDF5NativeLibrary.reloadPlugins();
             H5.H5error_off();
         }
     }

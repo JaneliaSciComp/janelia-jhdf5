@@ -52,6 +52,25 @@ public class HDF5PluginsTest
     }
 
     @Test
+    public void testFiltersSurviveLibraryReset() throws IOException
+    {
+        final File file = File.createTempFile("plugins-reset", ".h5");
+        try (IHDF5Writer w = HDF5Factory.open(file))
+        {
+            w.int32().write("/x", 1);
+        } finally
+        {
+            file.delete();
+        }
+        assertTrue("filter " + BZIP2 + " is not available before the reset",
+                H5.H5Zfilter_avail(BZIP2) > 0);
+        // H5close() discards HDF5's plugin search path; the reset must put it back.
+        assertTrue("library was not reset (files still open?)", HDF5Factory.reset());
+        assertTrue("filter " + BZIP2 + " is not available after HDF5Factory.reset()",
+                H5.H5Zfilter_avail(BZIP2) > 0);
+    }
+
+    @Test
     public void testRoundTripThroughPluginFilter() throws Exception
     {
         final File file = File.createTempFile("plugins-roundtrip", ".h5");

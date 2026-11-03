@@ -32,7 +32,9 @@ import org.bytedeco.javacpp.Loader;
  * Right after the library is loaded, the filter plugins bundled with {@code org.bytedeco:hdf5}
  * (bzip2, lzf, blosc, blosc2, lz4, bitshuffle, zfp, zstd, ...) are extracted and registered through
  * {@link HDF5Plugins#load()}. They live in the natives jar's {@code lib/plugin} directory, which
- * JavaCPP does not extract on its own, so without this HDF5 cannot find them.
+ * JavaCPP does not extract on its own, so without this HDF5 cannot find them. {@code H5close()}
+ * discards that registration again, so code that re-initializes the library (see
+ * {@code HDF5.resetLibrary()}) has to call {@link #reloadPlugins()} afterwards.
  */
 public final class HDF5NativeLibrary
 {
@@ -41,6 +43,9 @@ public final class HDF5NativeLibrary
     private static final String H5_NAME_PROPERTY = "hdf.hdf5lib.H5.loadLibraryName";
 
     private static boolean loaded = false;
+
+    /** Whether {@link #load()} registered the bundled plugins (and so a reset has to redo it). */
+    private static boolean bundledPlugins = false;
 
     private HDF5NativeLibrary()
     {
@@ -65,6 +70,7 @@ public final class HDF5NativeLibrary
             if (path != null)
             {
                 System.setProperty(H5_PATH_PROPERTY, path);
+                bundledPlugins = true;
                 loadPlugins();
             }
         }
@@ -91,6 +97,19 @@ public final class HDF5NativeLibrary
     {
         load();
         return constant.getAsLong();
+    }
+
+    /**
+     * Registers the bundled filter plugins again. {@code H5close()} resets HDF5's plugin search
+     * path, so this has to run after every {@code H5open()} that follows one. Does nothing if
+     * {@link #load()} did not register the plugins in the first place (user-chosen library).
+     */
+    public static synchronized void reloadPlugins()
+    {
+        if (bundledPlugins)
+        {
+            loadPlugins();
+        }
     }
 
     /**
