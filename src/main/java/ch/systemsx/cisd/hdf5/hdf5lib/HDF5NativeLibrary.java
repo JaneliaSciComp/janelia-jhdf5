@@ -1,8 +1,10 @@
 package ch.systemsx.cisd.hdf5.hdf5lib;
 
+import java.io.IOException;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
 
+import org.bytedeco.hdf5.HDF5Plugins;
 import org.bytedeco.hdf5.hdf5_java;
 import org.bytedeco.javacpp.Loader;
 
@@ -26,6 +28,11 @@ import org.bytedeco.javacpp.Loader;
  * are created before any static initializer of their enum runs, and their constructor arguments
  * are evaluated before their constructor. They read the constant through {@link #intConstant} or
  * {@link #longConstant} instead, which load the library first.
+ * <p>
+ * Right after the library is loaded, the filter plugins bundled with {@code org.bytedeco:hdf5}
+ * (bzip2, lzf, blosc, blosc2, lz4, bitshuffle, zfp, zstd, ...) are extracted and registered through
+ * {@link HDF5Plugins#load()}. They live in the natives jar's {@code lib/plugin} directory, which
+ * JavaCPP does not extract on its own, so without this HDF5 cannot find them.
  */
 public final class HDF5NativeLibrary
 {
@@ -58,6 +65,7 @@ public final class HDF5NativeLibrary
             if (path != null)
             {
                 System.setProperty(H5_PATH_PROPERTY, path);
+                loadPlugins();
             }
         }
         // Only now, so that a failed attempt (e.g. no natives for this platform) is retried and
@@ -83,6 +91,23 @@ public final class HDF5NativeLibrary
     {
         load();
         return constant.getAsLong();
+    }
+
+    /**
+     * Registers the bundled filter plugins. They are optional: if they are missing for this
+     * platform, files that use only HDF5's built-in filters still work, so this does not fail.
+     * Filters that are needed and missing are reported by HDF5 when a dataset that uses them is
+     * created or read.
+     */
+    private static void loadPlugins()
+    {
+        try
+        {
+            HDF5Plugins.load();
+        } catch (IOException ex)
+        {
+            System.err.println("Warning: could not load the bundled HDF5 filter plugins: " + ex);
+        }
     }
 
     private static boolean isSet(String key)
